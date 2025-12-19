@@ -15,6 +15,7 @@ use App\External\ResultRepository;
 use App\External\UserRepository;
 use App\Services\GeminiService;
 use App\Services\RateLimiter;
+use App\Controllers\KofiWebhookController;
 use PDO;
 use RuntimeException;
 
@@ -40,6 +41,10 @@ final class ServiceFactory
                 ),
                 new RambleRepository($db),
                 new RateLimiter($db)
+            ),
+            KofiWebhookController::class => new KofiWebhookController(
+                new UserRepository($db),
+                $db
             ),
             default => throw new RuntimeException("Unknown class: $class")
         };

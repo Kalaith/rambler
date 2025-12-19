@@ -1,6 +1,8 @@
 export class User {
     id: number = 0;
     email: string = '';
+    subscription_tier?: 'free' | 'pro' = 'free';
+    subscription_expires_at?: string;
 }
 
 export class Ramble {

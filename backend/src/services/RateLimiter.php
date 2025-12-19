@@ -18,22 +18,28 @@ final class RateLimiter
 
     public function canProcess(int $userId): bool
     {
-        $stmt = $this->db->prepare(
-            'SELECT COUNT(pr.id) as count 
-             FROM processed_results pr
-             JOIN rambles r ON pr.ramble_id = r.id
-             WHERE r.user_id = :user_id 
-             AND pr.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)'
-        );
-        
-        $stmt->execute(['user_id' => $userId]);
-        $row = $stmt->fetch();
-        
-        return (int)($row['count'] ?? 0) < $this->maxDaily;
+        $limitInfo = $this->getLimitInfo($userId);
+        return $limitInfo['count'] < $limitInfo['limit'];
     }
 
     public function getLimitInfo(int $userId): array
     {
+        // Get user tier
+        $stmt = $this->db->prepare('SELECT subscription_tier, subscription_expires_at FROM users WHERE id = :id');
+        $stmt->execute(['id' => $userId]);
+        $user = $stmt->fetch();
+
+        $tier = 'free';
+        if ($user && $user['subscription_tier'] === 'pro') {
+            // Check if expired
+            $expires = $user['subscription_expires_at'] ? strtotime($user['subscription_expires_at']) : 0;
+            if ($expires > time()) {
+                $tier = 'pro';
+            }
+        }
+
+        $limit = ($tier === 'pro') ? 200 : 20;
+
         $stmt = $this->db->prepare(
             'SELECT COUNT(pr.id) as count 
              FROM processed_results pr
@@ -48,8 +54,9 @@ final class RateLimiter
 
         return [
             'count' => $count,
-            'limit' => $this->maxDaily,
-            'remaining' => max(0, $this->maxDaily - $count)
+            'limit' => $limit,
+            'remaining' => max(0, $limit - $count),
+            'tier' => $tier
         ];
     }
 }

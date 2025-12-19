@@ -48,6 +48,7 @@ $router->post('/rambles', [RambleController::class, 'capture']);
 $router->get('/rambles', [RambleController::class, 'list']);
 $router->delete('/rambles/{id}', [RambleController::class, 'delete']);
 $router->post('/rambles/{id}/process', [RambleController::class, 'process']);
+$router->post('/webhooks/kofi', [KofiWebhookController::class, 'handle']);
 
 $router->get('/health', function() {
     header('Content-Type: application/json');

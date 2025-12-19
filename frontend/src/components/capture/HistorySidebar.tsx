@@ -6,6 +6,7 @@ interface HistorySidebarProps {
     rambles: Ramble[];
     selectedId: number | null;
     onSelect: (ramble: Ramble) => void;
+    onDelete: (id: number) => void;
     onNew: () => void;
 }
 
@@ -13,6 +14,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     rambles,
     selectedId,
     onSelect,
+    onDelete,
     onNew
 }) => {
     // Group rambles by date
@@ -52,6 +54,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                                     ramble={ramble}
                                     isSelected={selectedId === ramble.id}
                                     onSelect={onSelect}
+                                    onDelete={onDelete}
                                 />
                             ))}
                         </div>
@@ -63,6 +66,21 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                         <p className="text-zinc-300 text-xs font-medium">No entries yet. Start rambling!</p>
                     </div>
                 )}
+            </div>
+
+            <div className="p-6 border-t border-zinc-100">
+                <a
+                    href="https://ko-fi.com/webhatchery"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-4 bg-zinc-900 text-white rounded-2xl hover:bg-zinc-800 transition shadow-xl shadow-zinc-200 group"
+                >
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Go Professional</p>
+                        <p className="text-sm font-bold">Upgrade to Pro</p>
+                    </div>
+                    <span className="text-xl group-hover:translate-x-1 transition-transform">⚡</span>
+                </a>
             </div>
         </aside>
     );

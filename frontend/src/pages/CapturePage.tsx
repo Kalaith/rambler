@@ -13,7 +13,7 @@ export const CapturePage: React.FC = () => {
     const [processing, setProcessing] = useState(false);
     const [result, setResult] = useState<ProcessedResult | null>(null);
     const [currentRambleId, setCurrentRambleId] = useState<number | null>(null);
-    const { addRamble, rambles, fetchRambles } = useRambleStore();
+    const { addRamble, rambles, fetchRambles, deleteRamble } = useRambleStore();
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,6 +80,13 @@ export const CapturePage: React.FC = () => {
         setResult(null);
     };
 
+    const handleDeleteRamble = async (id: number) => {
+        const success = await deleteRamble(id);
+        if (success && currentRambleId === id) {
+            handleNewRamble();
+        }
+    };
+
     return (
         <div className="flex flex-col h-screen bg-zinc-50 text-zinc-800">
             <CaptureHeader
@@ -114,6 +121,7 @@ export const CapturePage: React.FC = () => {
                     rambles={rambles}
                     selectedId={currentRambleId}
                     onSelect={handleSelectRamble}
+                    onDelete={handleDeleteRamble}
                     onNew={handleNewRamble}
                 />
             </div>

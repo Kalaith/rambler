@@ -5,26 +5,38 @@ interface HistoryItemProps {
     ramble: Ramble;
     isSelected: boolean;
     onSelect: (ramble: Ramble) => void;
+    onDelete: (id: number) => void;
 }
 
-export const HistoryItem: React.FC<HistoryItemProps> = ({ ramble, isSelected, onSelect }) => (
-    <button
-        onClick={() => onSelect(ramble)}
-        className={`w-full text-left p-4 rounded-2xl transition-all duration-300 group ${isSelected
+export const HistoryItem: React.FC<HistoryItemProps> = ({ ramble, isSelected, onSelect, onDelete }) => (
+    <div className="relative group/item">
+        <button
+            onClick={() => onSelect(ramble)}
+            className={`w-full text-left p-4 rounded-2xl transition-all duration-300 group ${isSelected
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
                 : 'hover:bg-zinc-100 text-zinc-600'
-            }`}
-    >
-        <div className="flex justify-between items-center mb-1">
-            <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-indigo-200' : 'text-zinc-400'}`}>
-                {new Date(ramble.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            </span>
-            <span className={`text-[9px] font-bold ${isSelected ? 'text-indigo-300' : 'text-zinc-300'}`}>
-                {ramble.word_count} words
-            </span>
-        </div>
-        <p className={`text-xs line-clamp-1 font-medium italic ${isSelected ? 'text-white' : 'group-hover:text-zinc-900'}`}>
-            &ldquo;{ramble.content}&rdquo;
-        </p>
-    </button>
+                }`}
+        >
+            <div className="flex justify-between items-center mb-1">
+                <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-indigo-200' : 'text-zinc-400'}`}>
+                    {new Date(ramble.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+                <span className={`text-[9px] font-bold ${isSelected ? 'text-indigo-300' : 'text-zinc-300'}`}>
+                    {ramble.word_count} words
+                </span>
+            </div>
+            <p className={`text-xs line-clamp-1 font-medium italic pr-6 ${isSelected ? 'text-white' : 'group-hover:text-zinc-900'}`}>
+                &ldquo;{ramble.content}&rdquo;
+            </p>
+        </button>
+        <button
+            onClick={(e) => {
+                e.stopPropagation();
+                if (confirm('Delete this entry?')) onDelete(ramble.id);
+            }}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg opacity-0 group-hover/item:opacity-100 transition-all duration-300 ${isSelected ? 'hover:bg-indigo-500 text-indigo-200 hover:text-white' : 'hover:bg-rose-50 text-zinc-300 hover:text-rose-500'}`}
+        >
+            <span className="text-sm">×</span>
+        </button>
+    </div>
 );

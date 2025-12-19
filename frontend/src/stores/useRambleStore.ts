@@ -7,6 +7,7 @@ interface RambleState {
     loading: boolean;
     fetchRambles: () => Promise<void>;
     addRamble: (content: string) => Promise<Ramble | null>;
+    deleteRamble: (id: number) => Promise<boolean>;
 }
 
 export const useRambleStore = create<RambleState>((set) => ({
