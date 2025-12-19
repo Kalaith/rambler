@@ -3,15 +3,71 @@ import { useRambleStore } from '../stores/useRambleStore';
 import api from '../api/client';
 import { ProcessedResult } from '../types';
 
+const KernelDisplay: React.FC<{ result: ProcessedResult; small?: boolean; isDark?: boolean }> = ({ result, small, isDark }) => (
+    <div className="space-y-6">
+        <section className={small ? 'space-y-2' : 'space-y-3'}>
+            <h3 className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>Summary</h3>
+            <p className={`${small ? 'text-xs' : 'text-sm'} leading-relaxed font-medium ${isDark ? 'text-white/90 p-3 bg-white/10 rounded-2xl' : 'text-zinc-700 p-4 bg-zinc-50 rounded-2xl'}`}>
+                {result.summary}
+            </p>
+        </section>
+
+        {result.topics.length > 0 && (
+            <section className={small ? 'space-y-2' : 'space-y-3'}>
+                <h3 className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>Topics</h3>
+                <div className="flex flex-wrap gap-2">
+                    {result.topics.map((t, i) => (
+                        <span key={i} className={`px-2.5 py-1 rounded-lg ${small ? 'text-[9px]' : 'text-[10px] font-bold'} ${isDark ? 'bg-white/10 text-white' : 'bg-indigo-50 text-indigo-600'}`}>
+                            {t}
+                        </span>
+                    ))}
+                </div>
+            </section>
+        )}
+
+        {(!small && (result.questions.length > 0 || result.ideas.length > 0)) && (
+            <div className="space-y-6 pt-4">
+                <section className="space-y-3">
+                    <h3 className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>Questions</h3>
+                    <ul className="space-y-3">
+                        {result.questions.map((q, i) => (
+                            <li key={i} className="text-xs flex gap-3 leading-relaxed">
+                                <span className={isDark ? 'text-white/30' : 'text-indigo-200'}>?</span>
+                                <span className={isDark ? 'text-white/80' : 'text-zinc-600'}>{q}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+
+                <section className="space-y-3">
+                    <h3 className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>Ideas</h3>
+                    <ul className="space-y-3">
+                        {result.ideas.map((id, i) => (
+                            <li key={i} className="text-xs flex gap-3 leading-relaxed">
+                                <span className={isDark ? 'text-white/30' : 'text-indigo-200'}>💡</span>
+                                <span className={isDark ? 'text-white/80' : 'text-zinc-600'}>{id}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            </div>
+        )}
+    </div>
+);
+
 export const CapturePage: React.FC = () => {
     const [content, setContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [result, setResult] = useState<ProcessedResult | null>(null);
     const [currentRambleId, setCurrentRambleId] = useState<number | null>(null);
-    const { addRamble } = useRambleStore();
+    const { addRamble, rambles, fetchRambles } = useRambleStore();
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        fetchRambles();
+    }, []);
 
     // Basic Autosave simulation (Actually just creating a new ramble entry when paused)
     useEffect(() => {
@@ -69,56 +125,60 @@ export const CapturePage: React.FC = () => {
                 </div>
             </header>
 
-            <main className="flex-1 flex gap-8">
-                <textarea
-                    autoFocus
-                    placeholder="Start typing your nonsensical thoughts here..."
-                    className="flex-1 p-12 text-xl bg-white rounded-3xl shadow-sm border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-100 resize-none leading-relaxed"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                />
+            <main className="flex-1 flex flex-col gap-8 overflow-hidden">
+                <div className="flex gap-8 h-1/2 min-h-[400px]">
+                    <textarea
+                        autoFocus
+                        placeholder="Start typing your nonsensical thoughts here..."
+                        className="flex-1 p-12 text-xl bg-white rounded-3xl shadow-sm border border-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-100 resize-none leading-relaxed"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                    />
 
-                {result && (
-                    <aside className="w-1/3 bg-white rounded-3xl shadow-xl border border-slate-50 p-8 overflow-y-auto animate-in slide-in-from-right duration-500">
-                        <h2 className="text-xl font-bold mb-6 text-indigo-900 border-b pb-4">Knowledge Kernels</h2>
+                    {result && (
+                        <aside className="w-1/3 bg-white rounded-3xl shadow-xl border border-slate-50 p-8 overflow-y-auto animate-in slide-in-from-right duration-500">
+                            <h2 className="text-xl font-bold mb-6 text-indigo-900 border-b pb-4">New Kernels</h2>
+                            <KernelDisplay result={result} />
+                        </aside>
+                    )}
+                </div>
 
-                        <section className="mb-8">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Summary</h3>
-                            <p className="text-slate-700 bg-slate-50 p-4 rounded-xl leading-relaxed">{result.summary}</p>
-                        </section>
+                <div className="flex-1 overflow-y-auto pr-4">
+                    <h2 className="text-2xl font-bold mb-6 text-slate-800">Your History</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+                        {rambles.map((ramble) => (
+                            <div key={ramble.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition group">
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                        {new Date(ramble.created_at).toLocaleDateString()}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-slate-300 group-hover:text-indigo-200 transition">
+                                        {ramble.word_count} words
+                                    </span>
+                                </div>
+                                <p className="text-slate-600 line-clamp-3 mb-6 leading-relaxed italic border-l-2 border-indigo-50 pl-4">"{ramble.content}"</p>
 
-                        <section className="mb-8">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Topics</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {result.topics.map((t, i) => (
-                                    <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium">{t}</span>
-                                ))}
+                                {ramble.summary ? (
+                                    <div className="pt-6 border-t border-slate-50 space-y-4">
+                                        <KernelDisplay result={ramble as any} small />
+                                    </div>
+                                ) : (
+                                    <div className="pt-4 flex justify-center">
+                                        <button
+                                            onClick={() => {
+                                                setCurrentRambleId(ramble.id);
+                                                setContent(ramble.content);
+                                            }}
+                                            className="text-xs font-bold text-indigo-600 hover:underline"
+                                        >
+                                            Reprocess this ramble
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                        </section>
-
-                        <section className="mb-8">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Questions</h3>
-                            <ul className="space-y-2">
-                                {result.questions.map((q, i) => (
-                                    <li key={i} className="text-slate-600 flex gap-3">
-                                        <span className="text-indigo-300">?</span> {q}
-                                    </li>
-                                ))}
-                            </ul>
-                        </section>
-
-                        <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Ideas</h3>
-                            <ul className="space-y-2">
-                                {result.ideas.map((id, i) => (
-                                    <li key={i} className="text-slate-600 flex gap-3">
-                                        <span className="text-indigo-300">💡</span> {id}
-                                    </li>
-                                ))}
-                            </ul>
-                        </section>
-                    </aside>
-                )}
+                        ))}
+                    </div>
+                </div>
             </main>
 
             <footer className="mt-8 text-center text-slate-400 text-xs">

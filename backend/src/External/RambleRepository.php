@@ -29,7 +29,11 @@ final class RambleRepository
     public function findByUserId(int $userId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT id, content, word_count, created_at FROM rambles WHERE user_id = :user_id ORDER BY created_at DESC'
+            'SELECT r.*, pr.summary, pr.topics, pr.questions, pr.ideas 
+             FROM rambles r 
+             LEFT JOIN processed_results pr ON r.id = pr.ramble_id 
+             WHERE r.user_id = :user_id 
+             ORDER BY r.created_at DESC'
         );
         $stmt->execute(['user_id' => $userId]);
         

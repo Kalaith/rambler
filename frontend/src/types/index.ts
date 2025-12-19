@@ -8,6 +8,11 @@ export class Ramble {
     content: string = '';
     word_count: number = 0;
     created_at: string = '';
+    // Joined from processed_results
+    summary?: string;
+    topics?: string[];
+    questions?: string[];
+    ideas?: string[];
 }
 
 export class ProcessedResult {

@@ -67,6 +67,19 @@ final class RambleController
             $userId = $this->authenticate();
             $rambles = $this->rambleRepository->findByUserId($userId);
 
+            // Decode JSON fields for each ramble if they exist
+            foreach ($rambles as &$ramble) {
+                if (isset($ramble['topics'])) {
+                    $ramble['topics'] = json_decode($ramble['topics'], true) ?: [];
+                }
+                if (isset($ramble['questions'])) {
+                    $ramble['questions'] = json_decode($ramble['questions'], true) ?: [];
+                }
+                if (isset($ramble['ideas'])) {
+                    $ramble['ideas'] = json_decode($ramble['ideas'], true) ?: [];
+                }
+            }
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $rambles
