@@ -1,9 +1,15 @@
+import { useAuthStore } from './stores/useAuthStore';
+import { AuthPage } from './pages/AuthPage';
+import { CapturePage } from './pages/CapturePage';
+
 function App() {
-    return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-            <h1 className="text-4xl font-bold text-blue-600">Hello Rambler</h1>
-        </div>
-    )
+    const { token } = useAuthStore();
+
+    if (!token) {
+        return <AuthPage />;
+    }
+
+    return <CapturePage />;
 }
 
-export default App
+export default App;

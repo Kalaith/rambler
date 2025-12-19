@@ -1,7 +1,7 @@
 {
-  "name": "story_demon",
+  "name": "rambler-frontend",
   "version": "0.0.1",
-  "description": "StoryDemon",
+  "description": "The Rambler Frontend - Dump your thoughts",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,6 +22,7 @@
     "ci:quick": "npm run lint && npm run type-check && npm run format:check"
   },
   "dependencies": {
+    "axios": "^1.7.9",
     "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.1.10",

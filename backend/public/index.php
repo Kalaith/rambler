@@ -1,200 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use App\Config\Router;
+use App\Controllers\AuthController;
+use App\Controllers\RambleController;
 use Dotenv\Dotenv;
-use VoiceGenerator\Config\Router;
-use VoiceGenerator\Controllers\VoiceController;
-use VoiceGenerator\Controllers\ScriptController;
-use VoiceGenerator\Controllers\AudioController;
-use VoiceGenerator\Controllers\ServiceController;
 
+// Custom autoloader for App classes
+spl_autoload_register(function ($class) {
+    if (strpos($class, 'App\\') === 0) {
+        $path = __DIR__ . '/../src/' . str_replace('\\', '/', substr($class, 4)) . '.php';
+        if (file_exists($path)) {
+            require $path;
+        }
+    }
+}, true, true);
+
+// Load Environment
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
-$dotenv->load();
+$dotenv->safeLoad();
 
-// Configure Eloquent Database
-use Illuminate\Database\Capsule\Manager as Capsule;
+// Get CORS origin
+$allowedOrigin = $_ENV['CORS_ORIGIN'] ?? '*';
 
-$capsule = new Capsule();
-$capsule->addConnection([
-    'driver' => 'mysql',
-    'host' => $_ENV['DB_HOST'],
-    'port' => $_ENV['DB_PORT'],
-    'database' => $_ENV['DB_NAME'],
-    'username' => $_ENV['DB_USERNAME'],
-    'password' => $_ENV['DB_PASSWORD'],
-    'charset' => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix' => '',
-]);
-
-$capsule->setAsGlobal();
-$capsule->bootEloquent();
-
-// Enhanced CORS support for multiple frontend ports
-$allowedOrigins = [
-    $_ENV['CORS_ORIGIN'] ?? 'http://localhost:5173',
-    'http://localhost:3000',  // React default
-    'http://localhost:5173',  // Vite default  
-    'http://localhost:5174',  // Vite alternative
-    'http://localhost:8080',  // Vue/other
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174', 
-    'http://127.0.0.1:8080'
-];
-
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins)) {
-    header('Access-Control-Allow-Origin: ' . $origin);
-} else {
-    header('Access-Control-Allow-Origin: http://localhost:5173');
-}
-
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Max-Age: 86400');
-
+// Handle CORS preflight OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    header('Content-Length: 0');
-    exit();
+    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, Accept, Origin, Authorization');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    header('Access-Control-Max-Age: 86400');
+    exit(0);
 }
+
+// Global CORS header for all other requests
+header('Access-Control-Allow-Origin: ' . $allowedOrigin);
 
 $router = new Router();
 
-$voiceController = new VoiceController();
-$scriptController = new ScriptController();
-$audioController = new AudioController();
-$serviceController = new ServiceController();
+// Routes
+$router->post('/login', [AuthController::class, 'login']);
+$router->post('/register', [AuthController::class, 'register']);
 
-$router->get('/api/voices', function() use ($voiceController) { $voiceController->getAll(); });
-$router->get('/api/voices/{id}', function($id) use ($voiceController) { $voiceController->getById($id); });
-$router->post('/api/voices', function() use ($voiceController) { $voiceController->create(); });
-$router->put('/api/voices/{id}', function($id) use ($voiceController) { $voiceController->update($id); });
-$router->delete('/api/voices/{id}', function($id) use ($voiceController) { $voiceController->delete($id); });
+$router->post('/rambles', [RambleController::class, 'capture']);
+$router->get('/rambles', [RambleController::class, 'list']);
+$router->post('/rambles/{id}/process', [RambleController::class, 'process']);
 
-$router->get('/api/scripts', function() {
+$router->get('/health', function() {
     header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => [
-        [
-            'id' => 1,
-            'title' => 'Empty Script',
-            'description' => 'Script with no lines',
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ]
-    ]]);
-});
-$router->get('/api/scripts/{id}', function($id) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => [
-        'id' => (int)$id,
-        'title' => 'Empty Script',
-        'description' => 'Script with no lines',
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s')
-    ]]);
-});
-$router->post('/api/scripts', function() {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['id' => 2, 'title' => 'New Script', 'created' => true]]);
-});
-$router->put('/api/scripts/{id}', function($id) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['id' => (int)$id, 'updated' => true]]);
-});
-$router->delete('/api/scripts/{id}', function($id) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['id' => (int)$id, 'deleted' => true]]);
+    echo json_encode(['status' => 'ok']);
 });
 
-$router->get('/api/audio', function() use ($audioController) { $audioController->getAll(); });
-$router->get('/api/audio/{id}', function($id) use ($audioController) { $audioController->getById($id); });
-$router->get('/api/audio/script/{scriptId}', function($scriptId) use ($audioController) { $audioController->getByScriptId($scriptId); });
-$router->post('/api/audio', function() use ($audioController) { $audioController->create(); });
-$router->post('/api/audio/generate', function() use ($audioController) { $audioController->generateSimple(); });
-$router->put('/api/audio/{id}/status', function($id) use ($audioController) { $audioController->updateStatus($id); });
-$router->delete('/api/audio/{id}', function($id) use ($audioController) { $audioController->delete($id); });
-
-$router->get('/api/service/health', function() use ($serviceController) { $serviceController->healthCheck(); });
-$router->get('/api/service/status/{serviceId}', function($serviceId) use ($serviceController) { $serviceController->getGenerationStatus($serviceId); });
-
-// Proxy audio files from voice service
-$router->get('/audio/{filename}', function($filename) {
-    $serviceUrl = "http://localhost:9966/audio/{$filename}";
-    
-    // Get file from voice service
-    $curl = curl_init();
-    curl_setopt_array($curl, [
-        CURLOPT_URL => $serviceUrl,
-        CURLOPT_RETURNTRANSFER => false,
-        CURLOPT_HEADER => false,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_TIMEOUT => 10
-    ]);
-    
-    // Set appropriate headers
-    header('Content-Type: audio/wav');
-    header('Content-Disposition: inline; filename="' . basename($filename) . '"');
-    
-    $result = curl_exec($curl);
-    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    curl_close($curl);
-    
-    if ($httpCode !== 200) {
-        http_response_code(404);
-        echo json_encode(['error' => 'Audio file not found']);
-    }
-});
-
-// Basic video/character routes for frontend integration
-$router->get('/api/video/projects', function() {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => []]);
-});
-
-$router->get('/api/characters', function() {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => []]);
-});
-
-$router->post('/api/characters', function() {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['id' => 1, 'name' => 'Test Character', 'description' => 'Created']]);
-});
-
-// Additional video script endpoints
-$router->get('/api/scripts/{id}/video-data', function($id) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['id' => $id, 'lines' => [], 'scenes' => [], 'characters' => []]]);
-});
-
-$router->get('/api/scripts/{id}/readiness', function($id) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['readiness_score' => 50, 'recommendations' => []]]);
-});
-
-$router->post('/api/scripts/{id}/auto-generate-scenes', function($id) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['message' => 'Scene data generated']]);
-});
-
-$router->put('/api/script-lines/{id}', function($id) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'data' => ['id' => $id, 'updated' => true]]);
-});
-
-$router->get('/api/health', function() {
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'ok', 'timestamp' => time()]);
-});
-
+// Handle request
 try {
     $router->handle();
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     http_response_code(500);
     header('Content-Type: application/json');
-    echo json_encode(['error' => 'Internal server error']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Internal Server Error',
+        'error' => $e->getMessage()
+    ]);
 }

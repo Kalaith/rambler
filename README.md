@@ -28,7 +28,35 @@ We avoid "optimization" and "coaching" language.
 
 ---
 
-## 🏗️ Project Documentation
+## 🏗️ Getting Started
+
+### 📡 Backend
+1. **Configure**: Copy `backend/.env.example` to `backend/.env` and update credentials.
+2. **Initialize DB**: 
+   ```powershell
+   cd backend
+   composer db:init
+   ```
+3. **Start Server**: 
+   ```powershell
+   composer start
+   ```
+   (API will run on `http://localhost:8000`)
+
+### 🎨 Frontend
+1. **Install Deps**: 
+   ```powershell
+   cd frontend
+   npm install
+   ```
+2. **Start Dev**: 
+   ```powershell
+   npm run dev
+   ```
+   (App will run on `http://localhost:5173`)
+
+> [!TIP]
+> **Windows Users**: If using PowerShell 5.1, run commands individually. For a smoother experience, use the integrated terminal in VS Code.
 - [MVP Plan](file:///h:/WebHatchery/apps/rambler/MVP.md)
 - [Feature Roadmap](file:///h:/WebHatchery/apps/rambler/FEATURES.md)
 - [Monetization & Privacy](file:///h:/WebHatchery/apps/rambler/MONETIZATION.md)
