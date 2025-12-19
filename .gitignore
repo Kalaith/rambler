@@ -1,0 +1,33 @@
+# General
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Backend (PHP/Composer)
+backend/vendor/
+backend/composer.lock
+backend/storage/*.log
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+
+# Frontend (Node/Vite/npm)
+frontend/node_modules/
+frontend/dist/
+frontend/package-lock.json
+frontend/.eslintcache
+frontend/.stylelintcache
+
+# Build Artifacts
+dist/
+build/
+out/
