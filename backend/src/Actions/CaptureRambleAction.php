@@ -22,10 +22,11 @@ final class CaptureRambleAction
         $wordCount = str_word_count($content);
         $rambleId = $this->rambleRepository->create($userId, $content, $wordCount);
 
-        return [
-            'id' => $rambleId,
-            'word_count' => $wordCount,
-            'content_preview' => substr($content, 0, 100)
-        ];
+        $ramble = $this->rambleRepository->findById($rambleId);
+        if (!$ramble) {
+            throw new \RuntimeException('Failed to retrieve captured ramble');
+        }
+
+        return $ramble;
     }
 }

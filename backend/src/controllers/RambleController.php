@@ -8,6 +8,7 @@ use App\Actions\CaptureRambleAction;
 use App\Actions\ProcessRambleAction;
 use App\External\RambleRepository;
 use App\Middleware\JwtMiddleware;
+use App\Services\RateLimiter;
 use Throwable;
 
 final class RambleController
@@ -15,7 +16,8 @@ final class RambleController
     public function __construct(
         private readonly CaptureRambleAction $captureRambleAction,
         private readonly ProcessRambleAction $processRambleAction,
-        private readonly RambleRepository $rambleRepository
+        private readonly RambleRepository $rambleRepository,
+        private readonly RateLimiter $rateLimiter
     ) {}
 
     public function capture(): void
@@ -45,6 +47,12 @@ final class RambleController
     {
         try {
             $userId = $this->authenticate();
+            
+            if (!$this->rateLimiter->canProcess($userId)) {
+                $limitInfo = $this->rateLimiter->getLimitInfo($userId);
+                throw new \Exception("Daily processing limit reached ({$limitInfo['limit']}). Please try again tomorrow.");
+            }
+
             $rambleId = (int)($args['id'] ?? 0);
             
             $result = $this->processRambleAction->execute($userId, $rambleId);

@@ -23,11 +23,12 @@ final class GeminiService
 
     public function generateStructuredExtraction(string $text): array
     {
-        $prompt = "You are 'The Rambler' AI. Your goal is to extract useful kernels of knowledge from raw, nonsensical rambling.
+        $prompt = "You are 'The Rambler' AI. Your goal is to extract useful kernels of knowledge from raw, unstructured rambling.
+        Be gentle, neutral, and supportive. Do not judge or conclude; simply distill.
         Return a JSON object with:
-        - summary: A short, easy-to-read summary of the main points.
+        - summary: A short, gentle, and objective summary of the main points.
         - topics: An array of detected topics.
-        - questions: An array of questions the user is asking themselves.
+        - questions: An array of questions the user is asking themselves (gentle curiosity).
         - ideas: An array of specific ideas or flashes of insight.
 
         Text to process:

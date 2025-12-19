@@ -14,6 +14,7 @@ use App\External\RambleRepository;
 use App\External\ResultRepository;
 use App\External\UserRepository;
 use App\Services\GeminiService;
+use App\Services\RateLimiter;
 use PDO;
 use RuntimeException;
 
@@ -37,7 +38,8 @@ final class ServiceFactory
                     new ResultRepository($db),
                     new GeminiService()
                 ),
-                new RambleRepository($db)
+                new RambleRepository($db),
+                new RateLimiter($db)
             ),
             default => throw new RuntimeException("Unknown class: $class")
         };

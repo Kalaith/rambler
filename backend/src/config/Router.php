@@ -25,6 +25,11 @@ final class Router
         $this->addRoute('OPTIONS', $path, $handler);
     }
 
+    public function delete(string $path, array|callable $handler): void
+    {
+        $this->addRoute('DELETE', $path, $handler);
+    }
+
     private function addRoute(string $method, string $path, array|callable $handler): void
     {
         // Convert /rambles/{id} to regex

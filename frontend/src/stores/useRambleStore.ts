@@ -34,4 +34,16 @@ export const useRambleStore = create<RambleState>((set) => ({
             return null;
         }
     },
+    deleteRamble: async (id: number) => {
+        try {
+            await api.delete(`rambles/${id}`);
+            set((state) => ({
+                rambles: state.rambles.filter((r) => r.id !== id)
+            }));
+            return true;
+        } catch (error) {
+            console.error('Failed to delete ramble', error);
+            return false;
+        }
+    },
 }));

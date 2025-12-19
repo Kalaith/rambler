@@ -46,6 +46,7 @@ $router->post('/register', [AuthController::class, 'register']);
 
 $router->post('/rambles', [RambleController::class, 'capture']);
 $router->get('/rambles', [RambleController::class, 'list']);
+$router->delete('/rambles/{id}', [RambleController::class, 'delete']);
 $router->post('/rambles/{id}/process', [RambleController::class, 'process']);
 
 $router->get('/health', function() {
