@@ -41,10 +41,10 @@ final class RambleRepository
         return $stmt->fetchAll();
     }
 
-    public function findById(int $id): ?array
+    public function findById(int $id, int $userId): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM rambles WHERE id = :id AND deleted_at IS NULL LIMIT 1');
-        $stmt->execute(['id' => $id]);
+        $stmt = $this->db->prepare('SELECT * FROM rambles WHERE id = :id AND user_id = :user_id AND deleted_at IS NULL LIMIT 1');
+        $stmt->execute(['id' => $id, 'user_id' => $userId]);
         $ramble = $stmt->fetch();
         
         return $ramble ?: null;

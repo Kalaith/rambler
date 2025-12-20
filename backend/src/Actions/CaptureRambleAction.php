@@ -19,10 +19,8 @@ final class CaptureRambleAction
             throw new InvalidArgumentException('Content cannot be empty');
         }
 
-        $wordCount = str_word_count($content);
         $rambleId = $this->rambleRepository->create($userId, $content, $wordCount);
-
-        $ramble = $this->rambleRepository->findById($rambleId);
+        $ramble = $this->rambleRepository->findById($rambleId, $userId);
         if (!$ramble) {
             throw new \RuntimeException('Failed to retrieve captured ramble');
         }

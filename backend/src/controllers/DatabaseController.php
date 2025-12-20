@@ -15,6 +15,13 @@ final class DatabaseController
 {
     public function init(Request $request, Response $response): void
     {
+        // Simple security check for production/shared environments
+        $secret = $_ENV['DB_INIT_SECRET'] ?? $_SERVER['DB_INIT_SECRET'] ?? null;
+        if ($secret && $request->getParam('key') !== $secret) {
+            $response->error('Unauthorized: Invalid migration key', 403);
+            return;
+        }
+
         try {
             $host = $_SERVER['DB_HOST'] ?? $_ENV['DB_HOST'] ?? '127.0.0.1';
             $db   = $_SERVER['DB_NAME'] ?? $_ENV['DB_NAME'] ?? 'rambler';

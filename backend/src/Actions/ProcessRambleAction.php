@@ -20,9 +20,9 @@ final class ProcessRambleAction
 
     public function execute(int $userId, int $rambleId): array
     {
-        $ramble = $this->rambleRepository->findById($rambleId);
+        $ramble = $this->rambleRepository->findById($rambleId, $userId);
 
-        if (!$ramble || (int)$ramble['user_id'] !== $userId) {
+        if (!$ramble) {
             throw new InvalidArgumentException('Ramble not found or access denied');
         }
 
