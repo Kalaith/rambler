@@ -8,14 +8,17 @@ import { DistilledSidebar } from '../components/capture/DistilledSidebar';
 import { HistorySidebar } from '../components/capture/HistorySidebar';
 
 export const CapturePage: React.FC = () => {
-    const [content, setContent] = useState('');
+    const [content, setContent] = useState(() => localStorage.getItem('rambler_draft_content') || '');
     const [isSaving, setIsSaving] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [result, setResult] = useState<ProcessedResult | null>(null);
-    const [currentRambleId, setCurrentRambleId] = useState<number | null>(null);
-    const { addRamble, rambles, fetchRambles, deleteRamble } = useRambleStore();
+    const [currentRambleId, setCurrentRambleId] = useState<number | null>(() => {
+        const savedId = localStorage.getItem('rambler_draft_id');
+        return savedId ? parseInt(savedId, 10) : null;
+    });
+    const { addRamble, updateRamble, rambles, fetchRambles, deleteRamble } = useRambleStore();
 
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = useRef<any | null>(null);
 
     useEffect(() => {
         fetchRambles();
@@ -23,17 +26,31 @@ export const CapturePage: React.FC = () => {
 
     // Basic Autosave simulation
     useEffect(() => {
-        if (content.length > 10 && !currentRambleId) {
+        if (content.length > 10) {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
             timeoutRef.current = setTimeout(async () => {
                 setIsSaving(true);
-                const ramble = await addRamble(content);
-                if (ramble) setCurrentRambleId(ramble.id);
+                if (currentRambleId) {
+                    await updateRamble(currentRambleId, content);
+                } else {
+                    const ramble = await addRamble(content);
+                    if (ramble) setCurrentRambleId(ramble.id);
+                }
                 setIsSaving(false);
             }, 3000);
         }
     }, [content]);
+
+    // Persist to localStorage
+    useEffect(() => {
+        localStorage.setItem('rambler_draft_content', content);
+        if (currentRambleId) {
+            localStorage.setItem('rambler_draft_id', currentRambleId.toString());
+        } else {
+            localStorage.removeItem('rambler_draft_id');
+        }
+    }, [content, currentRambleId]);
 
     const handleProcess = async () => {
         if (!content || processing) return;
@@ -44,6 +61,9 @@ export const CapturePage: React.FC = () => {
             if (!rambleId) {
                 const ramble = await addRamble(content);
                 if (ramble) rambleId = ramble.id;
+            } else {
+                // Sync latest content before processing
+                await updateRamble(rambleId, content);
             }
 
             if (rambleId) {
@@ -78,6 +98,8 @@ export const CapturePage: React.FC = () => {
         setCurrentRambleId(null);
         setContent('');
         setResult(null);
+        localStorage.removeItem('rambler_draft_content');
+        localStorage.removeItem('rambler_draft_id');
     };
 
     const handleDeleteRamble = async (id: number) => {
@@ -94,6 +116,7 @@ export const CapturePage: React.FC = () => {
                 processing={processing}
                 hasContent={!!content}
                 onProcess={handleProcess}
+                onNew={handleNewRamble}
             />
 
             <div className="flex-1 flex overflow-hidden">

@@ -5,13 +5,15 @@ interface CaptureHeaderProps {
     processing: boolean;
     hasContent: boolean;
     onProcess: () => void;
+    onNew: () => void;
 }
 
 export const CaptureHeader: React.FC<CaptureHeaderProps> = ({
     isSaving,
     processing,
     hasContent,
-    onProcess
+    onProcess,
+    onNew
 }) => (
     <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-zinc-100 px-6 py-4 sm:px-12 sm:py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-center sm:text-left">
@@ -22,6 +24,12 @@ export const CaptureHeader: React.FC<CaptureHeaderProps> = ({
         </div>
         <div className="flex gap-4 items-center w-full sm:w-auto">
             {isSaving && <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 animate-pulse hidden sm:block">Syncing...</span>}
+            <button
+                onClick={onNew}
+                className="px-6 py-3 bg-zinc-50 text-zinc-600 rounded-2xl font-bold hover:bg-zinc-100 transition-all duration-300 flex items-center justify-center gap-2 border border-zinc-100"
+            >
+                New Note
+            </button>
             <button
                 onClick={onProcess}
                 disabled={processing || !hasContent}

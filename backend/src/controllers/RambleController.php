@@ -69,6 +69,33 @@ final class RambleController
         }
     }
 
+    public function update(array $args): void
+    {
+        try {
+            $userId = $this->authenticate();
+            $rambleId = (int)($args['id'] ?? 0);
+            $data = $this->getParsedBody();
+            $content = (string)($data['content'] ?? '');
+            $wordCount = str_word_count($content);
+
+            $success = $this->rambleRepository->update($rambleId, $userId, $content, $wordCount);
+
+            if (!$success) {
+                throw new \Exception("Failed to update ramble or ramble not found.");
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Ramble updated successfully'
+            ]);
+        } catch (Throwable $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
     public function list(): void
     {
         try {
@@ -97,6 +124,30 @@ final class RambleController
                 'success' => false,
                 'message' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function delete(array $args): void
+    {
+        try {
+            $userId = $this->authenticate();
+            $rambleId = (int)($args['id'] ?? 0);
+
+            $success = $this->rambleRepository->delete($rambleId, $userId);
+
+            if (!$success) {
+                throw new \Exception("Failed to delete ramble or ramble not found.");
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Ramble deleted successfully'
+            ]);
+        } catch (Throwable $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 

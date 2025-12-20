@@ -1,0 +1,48 @@
+# Dragons Den - URL Rewriting Configuration
+# This file handles routing for the Dragons Den game deployment
+# Frontend files serve from root, API calls route to backend
+
+RewriteEngine On
+
+# Enable CORS for API requests
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+
+# Handle preflight OPTIONS requests for CORS
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^api/ - [R=200,L]
+
+# Route all /api/* requests to the backend
+# This redirects api/* to backend/public/index.php within this directory
+RewriteRule ^api/(.*)$ backend/public/index.php [QSA,L]
+
+# Handle frontend routing for Single Page Application (SPA)  
+# If the request is not for an API endpoint, a real file, or a real directory,
+# serve the main index.html file (for React Router)
+RewriteCond %{REQUEST_URI} !^.*/api/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . index.html [L]
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+
+# Cache static assets (using mod_headers only)
+<FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "public, max-age=2592000"
+</FilesMatch>
+
+# Don't cache HTML files (for development)
+<FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+</FilesMatch>
+
+# Protect sensitive files
+<FilesMatch "\.(env|log|ini)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

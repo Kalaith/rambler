@@ -18,7 +18,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     onNew
 }) => {
     // Group rambles by date
-    const grouped = rambles.reduce((acc, ramble) => {
+    const grouped = (rambles || []).reduce((acc, ramble) => {
         const date = new Date(ramble.created_at).toLocaleDateString(undefined, {
             weekday: 'long',
             year: 'numeric',

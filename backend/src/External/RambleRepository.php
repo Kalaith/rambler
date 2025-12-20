@@ -57,4 +57,18 @@ final class RambleRepository
             'user_id' => $userId
         ]);
     }
+
+    public function update(int $id, int $userId, string $content, int $wordCount): bool
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE rambles SET content = :content, word_count = :word_count, updated_at = CURRENT_TIMESTAMP 
+             WHERE id = :id AND user_id = :user_id'
+        );
+        return $stmt->execute([
+            'id' => $id,
+            'user_id' => $userId,
+            'content' => $content,
+            'word_count' => $wordCount
+        ]);
+    }
 }

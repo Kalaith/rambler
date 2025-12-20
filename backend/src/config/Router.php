@@ -9,6 +9,12 @@ use Exception;
 final class Router
 {
     private array $routes = [];
+    private string $basePath = '';
+
+    public function setBasePath(string $basePath): void
+    {
+        $this->basePath = rtrim($basePath, '/');
+    }
 
     public function post(string $path, array|callable $handler): void
     {
@@ -30,6 +36,11 @@ final class Router
         $this->addRoute('DELETE', $path, $handler);
     }
 
+    public function put(string $path, array|callable $handler): void
+    {
+        $this->addRoute('PUT', $path, $handler);
+    }
+
     private function addRoute(string $method, string $path, array|callable $handler): void
     {
         // Convert /rambles/{id} to regex
@@ -46,7 +57,16 @@ final class Router
     public function handle(): void
     {
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $path = explode('?', $_SERVER['REQUEST_URI'] ?? '/')[0];
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $path = explode('?', $uri)[0];
+
+        if (!empty($this->basePath) && strpos($path, $this->basePath) === 0) {
+            $path = substr($path, strlen($this->basePath));
+        }
+        
+        if (empty($path)) {
+            $path = '/';
+        }
 
         // CORS is handled in public/index.php
 

@@ -16,6 +16,8 @@ use App\External\UserRepository;
 use App\Services\GeminiService;
 use App\Services\RateLimiter;
 use App\Controllers\KofiWebhookController;
+use App\Controllers\DatabaseController;
+use App\Controllers\HealthController;
 use PDO;
 use RuntimeException;
 
@@ -46,6 +48,8 @@ final class ServiceFactory
                 new UserRepository($db),
                 $db
             ),
+            DatabaseController::class => new DatabaseController(),
+            HealthController::class => new HealthController($db),
             default => throw new RuntimeException("Unknown class: $class")
         };
     }

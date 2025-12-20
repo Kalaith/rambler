@@ -7,6 +7,7 @@ interface RambleState {
     loading: boolean;
     fetchRambles: () => Promise<void>;
     addRamble: (content: string) => Promise<Ramble | null>;
+    updateRamble: (id: number, content: string) => Promise<boolean>;
     deleteRamble: (id: number) => Promise<boolean>;
 }
 
@@ -33,6 +34,20 @@ export const useRambleStore = create<RambleState>((set) => ({
         } catch (error) {
             console.error('Failed to add ramble', error);
             return null;
+        }
+    },
+    updateRamble: async (id: number, content: string) => {
+        try {
+            await api.put(`rambles/${id}`, { content });
+            set((state) => ({
+                rambles: state.rambles.map((r) =>
+                    r.id === id ? { ...r, content, word_count: content.split(/\s+/).length } : r
+                )
+            }));
+            return true;
+        } catch (error) {
+            console.error('Failed to update ramble', error);
+            return false;
         }
     },
     deleteRamble: async (id: number) => {
