@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Config;
+namespace App\Core;
 
 use App\Core\Request;
 use App\Core\Response;

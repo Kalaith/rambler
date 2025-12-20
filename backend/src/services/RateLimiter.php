@@ -11,7 +11,8 @@ final class RateLimiter
     private int $maxDaily;
 
     public function __construct(
-        private readonly PDO $db
+        private readonly \App\External\UserRepository $userRepository,
+        private readonly \App\External\ResultRepository $resultRepository
     ) {
         $this->maxDaily = (int)($_ENV['MAX_DAILY_PROCESS'] ?? 20);
     }
@@ -25,12 +26,10 @@ final class RateLimiter
     public function getLimitInfo(int $userId): array
     {
         // Get user tier
-        $stmt = $this->db->prepare('SELECT subscription_tier, subscription_expires_at FROM users WHERE id = :id');
-        $stmt->execute(['id' => $userId]);
-        $user = $stmt->fetch();
+        $user = $this->userRepository->findByIdWithSubscription($userId);
 
         $tier = 'free';
-        if ($user && $user['subscription_tier'] === 'pro') {
+        if ($user && ($user['subscription_tier'] ?? 'free') === 'pro') {
             // Check if expired
             $expires = $user['subscription_expires_at'] ? strtotime($user['subscription_expires_at']) : 0;
             if ($expires > time()) {
@@ -40,17 +39,7 @@ final class RateLimiter
 
         $limit = ($tier === 'pro') ? 200 : 20;
 
-        $stmt = $this->db->prepare(
-            'SELECT COUNT(pr.id) as count 
-             FROM processed_results pr
-             JOIN rambles r ON pr.ramble_id = r.id
-             WHERE r.user_id = :user_id 
-             AND pr.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)'
-        );
-        
-        $stmt->execute(['user_id' => $userId]);
-        $row = $stmt->fetch();
-        $count = (int)($row['count'] ?? 0);
+        $count = $this->resultRepository->countRecentByUserId($userId);
 
         return [
             'count' => $count,

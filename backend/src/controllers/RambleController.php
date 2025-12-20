@@ -15,9 +15,11 @@ use Throwable;
 final class RambleController
 {
     public function __construct(
-        private readonly CaptureRambleAction $captureRambleAction,
-        private readonly ProcessRambleAction $processRambleAction,
-        private readonly RambleRepository $rambleRepository,
+        private readonly \App\Actions\CaptureRambleAction $captureRambleAction,
+        private readonly \App\Actions\ProcessRambleAction $processRambleAction,
+        private readonly \App\Actions\UpdateRambleAction $updateRambleAction,
+        private readonly \App\Actions\ListRamblesAction $listRamblesAction,
+        private readonly \App\Actions\DeleteRambleAction $deleteRambleAction,
         private readonly RateLimiter $rateLimiter
     ) {}
 
@@ -63,13 +65,8 @@ final class RambleController
             $userId = (int)$request->getAttribute('user_id', 0);
             $rambleId = (int)$request->getParam('id', 0);
             $content = (string)$request->get('content', '');
-            $wordCount = str_word_count($content);
 
-            $success = $this->rambleRepository->update($rambleId, $userId, $content, $wordCount);
-
-            if (!$success) {
-                throw new \Exception("Failed to update ramble or ramble not found.");
-            }
+            $this->updateRambleAction->execute($userId, $rambleId, $content);
 
             $response->success(null, 'Ramble updated successfully');
         } catch (Throwable $e) {
@@ -81,20 +78,7 @@ final class RambleController
     {
         try {
             $userId = (int)$request->getAttribute('user_id', 0);
-            $rambles = $this->rambleRepository->findByUserId($userId);
-
-            // Decode JSON fields for each ramble if they exist
-            foreach ($rambles as &$ramble) {
-                if (isset($ramble['topics'])) {
-                    $ramble['topics'] = json_decode($ramble['topics'], true) ?: [];
-                }
-                if (isset($ramble['questions'])) {
-                    $ramble['questions'] = json_decode($ramble['questions'], true) ?: [];
-                }
-                if (isset($ramble['ideas'])) {
-                    $ramble['ideas'] = json_decode($ramble['ideas'], true) ?: [];
-                }
-            }
+            $rambles = $this->listRamblesAction->execute($userId);
 
             $response->success($rambles);
         } catch (Throwable $e) {
@@ -108,15 +92,22 @@ final class RambleController
             $userId = (int)$request->getAttribute('user_id', 0);
             $rambleId = (int)$request->getParam('id', 0);
 
-            $success = $this->rambleRepository->delete($rambleId, $userId);
-
-            if (!$success) {
-                throw new \Exception("Failed to delete ramble or ramble not found.");
-            }
+            $this->deleteRambleAction->execute($userId, $rambleId);
 
             $response->success(null, 'Ramble deleted successfully');
         } catch (Throwable $e) {
             $response->error($e->getMessage(), 400);
+        }
+    }
+
+    public function getUsage(Request $request, Response $response): void
+    {
+        try {
+            $userId = (int)$request->getAttribute('user_id', 0);
+            $limitInfo = $this->rateLimiter->getLimitInfo($userId);
+            $response->success($limitInfo);
+        } catch (Throwable $e) {
+            $response->error($e->getMessage(), 500);
         }
     }
 }

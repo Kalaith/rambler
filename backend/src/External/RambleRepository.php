@@ -33,6 +33,7 @@ final class RambleRepository
              FROM rambles r 
              LEFT JOIN processed_results pr ON r.id = pr.ramble_id 
              WHERE r.user_id = :user_id 
+             AND r.deleted_at IS NULL
              ORDER BY r.created_at DESC'
         );
         $stmt->execute(['user_id' => $userId]);
@@ -42,7 +43,7 @@ final class RambleRepository
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM rambles WHERE id = :id LIMIT 1');
+        $stmt = $this->db->prepare('SELECT * FROM rambles WHERE id = :id AND deleted_at IS NULL LIMIT 1');
         $stmt->execute(['id' => $id]);
         $ramble = $stmt->fetch();
         
@@ -51,11 +52,15 @@ final class RambleRepository
 
     public function delete(int $id, int $userId): bool
     {
-        $stmt = $this->db->prepare('DELETE FROM rambles WHERE id = :id AND user_id = :user_id');
-        return $stmt->execute([
+        $stmt = $this->db->prepare(
+            'UPDATE rambles SET deleted_at = CURRENT_TIMESTAMP 
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $stmt->execute([
             'id' => $id,
             'user_id' => $userId
         ]);
+        return $stmt->rowCount() > 0;
     }
 
     public function update(int $id, int $userId, string $content, int $wordCount): bool
@@ -64,11 +69,12 @@ final class RambleRepository
             'UPDATE rambles SET content = :content, word_count = :word_count, updated_at = CURRENT_TIMESTAMP 
              WHERE id = :id AND user_id = :user_id'
         );
-        return $stmt->execute([
+        $stmt->execute([
             'id' => $id,
             'user_id' => $userId,
             'content' => $content,
             'word_count' => $wordCount
         ]);
+        return $stmt->rowCount() > 0;
     }
 }

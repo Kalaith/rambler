@@ -42,4 +42,13 @@ final class UserRepository
         
         return $user ?: null;
     }
+
+    public function findByIdWithSubscription(int $id): ?array
+    {
+        $stmt = $this->db->prepare('SELECT subscription_tier, subscription_expires_at FROM users WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $user = $stmt->fetch();
+        
+        return $user ?: null;
+    }
 }

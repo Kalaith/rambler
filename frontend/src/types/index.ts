@@ -30,3 +30,10 @@ export class ApiResponse<T> {
     token?: string;
     message?: string;
 }
+
+export class UsageLimit {
+    count: number = 0;
+    limit: number = 0;
+    remaining: number = 0;
+    tier: string = 'free';
+}

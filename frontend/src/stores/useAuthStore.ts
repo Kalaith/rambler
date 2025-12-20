@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '../types';
-import api from '../api/client';
+import { authService } from '../api/auth';
+import { useRambleStore } from './useRambleStore';
 
 interface AuthState {
     user: User | null;
@@ -21,30 +22,35 @@ const useAuthStore = create<AuthState>()(
                 set({ user, token });
             },
             login: async (email, password) => {
-                try {
-                    const response = await api.post('login', { email, password });
-                    if (response.data.success !== false) {
-                        const { user, token } = response.data.data;
-                        set({ user: user || { id: 0, email }, token });
-                        return true;
-                    }
-                    return false;
-                } catch (error) {
-                    console.error('Login failed', error);
-                    return false;
+                const result = await authService.login(email, password);
+                if (result.success && result.data) {
+                    const { user, token } = result.data;
+                    set({ user: user || { id: 0, email }, token });
+                    return true;
                 }
+                return false;
             },
             register: async (email, password) => {
-                try {
-                    const response = await api.post('register', { email, password });
-                    return response.data.success !== false;
-                } catch (error) {
-                    console.error('Registration failed', error);
-                    return false;
-                }
+                const result = await authService.register(email, password);
+                return result.success;
             },
             logout: () => {
+                // Completely destructive logout for all "rambler_" data
+                Object.keys(localStorage).forEach(key => {
+                    if (key.includes('rambler')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+
+                // Reset other stores
+                useRambleStore.getState().clearRambles();
+
+                // Clear state
                 set({ user: null, token: null });
+
+                // Force a page reload to ensure all memory-resident state is purged
+                const basePath = (import.meta as any).env.VITE_BASE_PATH || '/';
+                window.location.href = basePath;
             },
         }),
         {

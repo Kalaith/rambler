@@ -34,22 +34,13 @@ final class DatabaseController
             // 2. Reconnect to the database
             $pdo->exec("USE `$db`");
 
-            // 3. Check if tables already exist (idempotency check)
-            $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
-            if ($stmt->fetch()) {
-                $response->success(null, 'Database already initialized');
-                return;
-            }
-
-            // 4. Read and execute schema.sql
+            // 3. Read and execute schema.sql (contains IF NOT EXISTS)
             $schemaPath = __DIR__ . '/../../database/schema.sql';
             if (!file_exists($schemaPath)) {
                 throw new Exception("Schema file not found at $schemaPath");
             }
 
             $sql = file_get_contents($schemaPath);
-            
-            // Split by semicolon and execute
             $statements = array_filter(array_map('trim', explode(';', $sql)));
             foreach ($statements as $statement) {
                 if (!empty($statement)) {
@@ -57,7 +48,25 @@ final class DatabaseController
                 }
             }
 
-            $response->success(null, 'Database initialized successfully');
+            // 4. Handle specific migrations (Add missing columns)
+            
+            // Add subscription columns to users if missing
+            $stmt = $pdo->query("SHOW COLUMNS FROM `users` LIKE 'subscription_tier'");
+            if (!$stmt->fetch()) {
+                $pdo->exec("ALTER TABLE `users` ADD COLUMN `subscription_tier` ENUM('free', 'pro') DEFAULT 'free' AFTER `updated_at` ");
+            }
+            $stmt = $pdo->query("SHOW COLUMNS FROM `users` LIKE 'subscription_expires_at'");
+            if (!$stmt->fetch()) {
+                $pdo->exec("ALTER TABLE `users` ADD COLUMN `subscription_expires_at` TIMESTAMP NULL DEFAULT NULL AFTER `subscription_tier` ");
+            }
+
+            // Add deleted_at to rambles if not exists
+            $stmt = $pdo->query("SHOW COLUMNS FROM `rambles` LIKE 'deleted_at'");
+            if (!$stmt->fetch()) {
+                $pdo->exec("ALTER TABLE `rambles` ADD COLUMN `deleted_at` TIMESTAMP NULL DEFAULT NULL AFTER `updated_at` ");
+            }
+
+            $response->success(null, 'Database initialized and migrated successfully');
 
         } catch (PDOException $e) {
             $response->error('Database Error: ' . $e->getMessage(), 500);

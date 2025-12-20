@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Config;
+namespace App\Core;
 
 use App\Actions\CaptureRambleAction;
 use App\Actions\LoginAction;
@@ -41,8 +41,10 @@ final class ServiceFactory
                     new ResultRepository($db),
                     new GeminiService()
                 ),
-                new RambleRepository($db),
-                new RateLimiter($db)
+                new \App\Actions\UpdateRambleAction(new RambleRepository($db)),
+                new \App\Actions\ListRamblesAction(new RambleRepository($db)),
+                new \App\Actions\DeleteRambleAction(new RambleRepository($db)),
+                new RateLimiter(new UserRepository($db), new ResultRepository($db))
             ),
             KofiWebhookController::class => new KofiWebhookController(
                 new UserRepository($db),

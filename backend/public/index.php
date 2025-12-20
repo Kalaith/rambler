@@ -14,7 +14,7 @@ spl_autoload_register(function ($class) {
     }
 }, true, true);
 
-use App\Config\Router;
+use App\Core\Router;
 use App\Controllers\AuthController;
 use App\Controllers\RambleController;
 use App\Controllers\DatabaseController;
@@ -68,10 +68,12 @@ $router->get('/rambles', [RambleController::class, 'list'], [JwtMiddleware::clas
 $router->put('/rambles/{id}', [RambleController::class, 'update'], [JwtMiddleware::class]);
 $router->delete('/rambles/{id}', [RambleController::class, 'delete'], [JwtMiddleware::class]);
 $router->post('/rambles/{id}/process', [RambleController::class, 'process'], [JwtMiddleware::class]);
+$router->get('/usage', [RambleController::class, 'getUsage'], [JwtMiddleware::class]);
 
 // Other Routes
 $router->post('/webhooks/kofi', [KofiWebhookController::class, 'handle']);
 $router->get('/db-init', [DatabaseController::class, 'init']);
+$router->get('/db/init', [DatabaseController::class, 'init']);
 $router->get('/health', [HealthController::class, 'check']);
 
 // Handle request
