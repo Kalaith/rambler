@@ -2,15 +2,23 @@
 
 declare(strict_types=1);
 
-// 1. Try local vendor
-$autoloader = __DIR__ . '/../vendor/autoload.php';
+// Search for shared vendor folder in multiple locations
+$autoloader = null;
+$searchPaths = [
+    __DIR__ . '/../vendor/autoload.php',           // Local vendor
+    __DIR__ . '/../../vendor/autoload.php',        // 2 levels up
+    __DIR__ . '/../../../vendor/autoload.php',     // 3 levels up (Preview typically)
+    __DIR__ . '/../../../../vendor/autoload.php',  // 4 levels up
+    __DIR__ . '/../../../../../vendor/autoload.php' // 5 levels up
+];
 
-// 2. Try shared vendor (up 3 levels for subfolder deployment)
-if (!file_exists($autoloader)) {
-    $autoloader = __DIR__ . '/../../../vendor/autoload.php';
+foreach ($searchPaths as $path) {
+    if (file_exists($path)) {
+        $autoloader = $path;
+        break;
+    }
 }
-
-if (!file_exists($autoloader)) {
+if (!$autoloader) {
     header("HTTP/1.1 500 Internal Server Error");
     echo "Autoloader not found. Please run 'composer install' or check your deployment.";
     exit(1);

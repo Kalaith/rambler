@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
 
-const basename = import.meta.env.VITE_BASE_PATH || '/';
+const basename = import.meta.env.VITE_BASE_PATH;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
