@@ -7,6 +7,7 @@ namespace App\Core;
 final class Request
 {
     private array $params;
+    private array $queryParams;
     private array $body;
     private array $headers;
     private array $attributes = [];
@@ -14,13 +15,19 @@ final class Request
     public function __construct(array $params = [])
     {
         $this->params = $params;
+        $this->queryParams = $_GET;
         $this->body = $this->parseBody();
         $this->headers = $this->getHeaders();
     }
 
     public function getParam(string $name, mixed $default = null): mixed
     {
-        return $this->params[$name] ?? $default;
+        return $this->params[$name] ?? $this->queryParams[$name] ?? $default;
+    }
+
+    public function getQueryParam(string $name, mixed $default = null): mixed
+    {
+        return $this->queryParams[$name] ?? $default;
     }
 
     public function getBody(): array

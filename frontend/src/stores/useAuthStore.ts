@@ -32,7 +32,11 @@ const useAuthStore = create<AuthState>()(
             },
             register: async (email, password) => {
                 const result = await authService.register(email, password);
-                return result.success;
+                if (result.success) {
+                    await useAuthStore.getState().login(email, password);
+                    return true;
+                }
+                return false;
             },
             logout: () => {
                 // Completely destructive logout for all "rambler_" data

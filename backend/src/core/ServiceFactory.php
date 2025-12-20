@@ -27,33 +27,40 @@ final class ServiceFactory
 
     public function create(string $class): object
     {
-        $db = $this->getDb();
-
         return match ($class) {
             AuthController::class => new AuthController(
-                new RegisterAction(new UserRepository($db)),
-                new LoginAction(new UserRepository($db))
+                new RegisterAction(new UserRepository($this->getDb())),
+                new LoginAction(new UserRepository($this->getDb()))
             ),
             RambleController::class => new RambleController(
-                new CaptureRambleAction(new RambleRepository($db)),
+                new CaptureRambleAction(new RambleRepository($this->getDb())),
                 new ProcessRambleAction(
-                    new RambleRepository($db),
-                    new ResultRepository($db),
+                    new RambleRepository($this->getDb()),
+                    new ResultRepository($this->getDb()),
                     new GeminiService()
                 ),
-                new \App\Actions\UpdateRambleAction(new RambleRepository($db)),
-                new \App\Actions\ListRamblesAction(new RambleRepository($db)),
-                new \App\Actions\DeleteRambleAction(new RambleRepository($db)),
-                new RateLimiter(new UserRepository($db), new ResultRepository($db))
+                new \App\Actions\UpdateRambleAction(new RambleRepository($this->getDb())),
+                new \App\Actions\ListRamblesAction(new RambleRepository($this->getDb())),
+                new \App\Actions\DeleteRambleAction(new RambleRepository($this->getDb())),
+                new RateLimiter(new UserRepository($this->getDb()), new ResultRepository($this->getDb()))
             ),
             KofiWebhookController::class => new KofiWebhookController(
-                new UserRepository($db),
-                $db
+                new UserRepository($this->getDb()),
+                $this->getDb()
             ),
             DatabaseController::class => new DatabaseController(),
-            HealthController::class => new HealthController($db),
+            HealthController::class => new HealthController($this->tryGetDb()),
             default => throw new RuntimeException("Unknown class: $class")
         };
+    }
+
+    private function tryGetDb(): ?PDO
+    {
+        try {
+            return $this->getDb();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     private function getDb(): PDO

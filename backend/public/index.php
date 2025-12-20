@@ -2,7 +2,21 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../vendor/autoload.php';
+// 1. Try local vendor
+$autoloader = __DIR__ . '/../vendor/autoload.php';
+
+// 2. Try shared vendor (up 3 levels for subfolder deployment)
+if (!file_exists($autoloader)) {
+    $autoloader = __DIR__ . '/../../../vendor/autoload.php';
+}
+
+if (!file_exists($autoloader)) {
+    header("HTTP/1.1 500 Internal Server Error");
+    echo "Autoloader not found. Please run 'composer install' or check your deployment.";
+    exit(1);
+}
+
+require_once $autoloader;
 
 // Manual autoloader for App classes - prepend to override stale composer mappings in preview
 spl_autoload_register(function ($class) {
