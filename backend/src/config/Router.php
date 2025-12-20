@@ -4,53 +4,56 @@ declare(strict_types=1);
 
 namespace App\Config;
 
+use App\Core\Request;
+use App\Core\Response;
 use Exception;
 
 final class Router
 {
     private array $routes = [];
     private string $basePath = '';
+    private array $globalMiddleware = [];
 
     public function setBasePath(string $basePath): void
     {
         $this->basePath = rtrim($basePath, '/');
     }
 
-    public function post(string $path, array|callable $handler): void
+    public function addMiddleware(callable|string $middleware): void
     {
-        $this->addRoute('POST', $path, $handler);
+        $this->globalMiddleware[] = $middleware;
     }
 
-    public function get(string $path, array|callable $handler): void
+    public function post(string $path, array|callable $handler, array $middleware = []): void
     {
-        $this->addRoute('GET', $path, $handler);
+        $this->addRoute('POST', $path, $handler, $middleware);
     }
 
-    public function options(string $path, array|callable $handler): void
+    public function get(string $path, array|callable $handler, array $middleware = []): void
     {
-        $this->addRoute('OPTIONS', $path, $handler);
+        $this->addRoute('GET', $path, $handler, $middleware);
     }
 
-    public function delete(string $path, array|callable $handler): void
+    public function put(string $path, array|callable $handler, array $middleware = []): void
     {
-        $this->addRoute('DELETE', $path, $handler);
+        $this->addRoute('PUT', $path, $handler, $middleware);
     }
 
-    public function put(string $path, array|callable $handler): void
+    public function delete(string $path, array|callable $handler, array $middleware = []): void
     {
-        $this->addRoute('PUT', $path, $handler);
+        $this->addRoute('DELETE', $path, $handler, $middleware);
     }
 
-    private function addRoute(string $method, string $path, array|callable $handler): void
+    private function addRoute(string $method, string $path, array|callable $handler, array $middleware): void
     {
-        // Convert /rambles/{id} to regex
         $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[^/]+)', $path);
         $pattern = "#^" . $pattern . "$#";
         
         $this->routes[] = [
             'method' => $method,
             'pattern' => $pattern,
-            'handler' => $handler
+            'handler' => $handler,
+            'middleware' => $middleware
         ];
     }
 
@@ -68,34 +71,42 @@ final class Router
             $path = '/';
         }
 
-        // CORS is handled in public/index.php
-
         foreach ($this->routes as $route) {
             if ($route['method'] === $method && preg_match($route['pattern'], $path, $matches)) {
-                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-                $handler = $route['handler'];
+                $routeParams = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                
+                $request = new Request($routeParams);
+                $response = new Response();
 
+                // Run Middleware
+                $middlewares = array_merge($this->globalMiddleware, $route['middleware']);
+                foreach ($middlewares as $mw) {
+                    $mwInstance = is_string($mw) ? new $mw() : $mw;
+                    $result = $mwInstance->handle($request, $response);
+                    
+                    // If middleware returns a response or fails, we stop
+                    if ($result === false) {
+                        return;
+                    }
+                }
+
+                $handler = $route['handler'];
                 if (is_callable($handler)) {
-                    $handler($params);
+                    $handler($request, $response);
                     return;
                 }
 
                 if (is_array($handler)) {
-                    $controllerClass = $handler[0];
-                    $methodName = $handler[1];
-
                     $factory = new ServiceFactory();
-                    $controller = $factory->create($controllerClass);
+                    $controller = $factory->create($handler[0]);
+                    $methodName = $handler[1];
                     
-                    $controller->$methodName($params);
+                    $controller->$methodName($request, $response);
                     return;
                 }
             }
         }
 
-        http_response_code(404);
-        header('Content-Type: application/json');
-        header('Access-Control-Allow-Origin: ' . ($_ENV['CORS_ORIGIN'] ?? '*'));
-        echo json_encode(['error' => 'Route not found: ' . $path]);
+        (new Response())->withStatus(404)->json(['error' => 'Route not found: ' . $path]);
     }
 }

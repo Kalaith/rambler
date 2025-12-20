@@ -7,13 +7,41 @@ const api = axios.create({
     },
 });
 
+// Callback to be triggered on 401 Unauthorized
+let onUnauthorized: (() => void) | null = null;
+
+export const registerUnauthorizedCallback = (callback: () => void) => {
+    onUnauthorized = callback;
+};
+
 // Request interceptor for JWT
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    // Since we use Zustand persist, the token is inside the 'auth-storage' object
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+        try {
+            const { state } = JSON.parse(authStorage);
+            if (state && state.token) {
+                config.headers.Authorization = `Bearer ${state.token}`;
+            }
+        } catch (e) {
+            console.error('Failed to parse auth-storage', e);
+        }
     }
     return config;
 });
+
+// Response interceptor for 401 Handling
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            if (onUnauthorized) {
+                onUnauthorized();
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default api;

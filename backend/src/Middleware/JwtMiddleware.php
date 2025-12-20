@@ -4,54 +4,44 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Core\Request;
+use App\Core\Response;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use RuntimeException;
 
 final class JwtMiddleware
 {
-    /**
-     * Authenticates the request and returns the user ID.
-     * Throws an exception or exits with a JSON error if unauthorized.
-     */
-    public function authenticate(): int
+    public function handle(Request $request, Response $response): bool
     {
-        $headers = function_exists('getallheaders') ? getallheaders() : $this->getHeadersManual();
-        $authorization = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        $authorization = $request->getHeader('Authorization') ?? '';
 
         if (!$authorization || !preg_match('/Bearer\s+(.*)$/i', $authorization, $matches)) {
-            $this->unauthorized('Missing or invalid token');
-            exit(); 
+            $response->error('Missing or invalid token', 401);
+            return false;
         }
 
         $token = $matches[1];
-        $secret = $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? 'rambler_secret_change_me';
+        $secret = $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: '';
+
+        // Debug logging
+        $maskedSecret = substr($secret, 0, 3) . '...' . substr($secret, -3);
+        $source = isset($_ENV['JWT_SECRET']) ? '$_ENV' : (isset($_SERVER['JWT_SECRET']) ? '$_SERVER' : (getenv('JWT_SECRET') ? 'getenv' : 'none'));
+        error_log("JWT Verify - Source: $source, Secret: $maskedSecret, Token Prefix: " . substr($token, 0, 10));
+
+        if (empty($secret)) {
+            $response->error('Internal server error: JWT security not configured', 500);
+            return false;
+        }
 
         try {
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
-            return (int)$decoded->sub;
+            // Store user_id in request attributes
+            $request->setAttribute('user_id', (int)$decoded->sub);
+            return true;
         } catch (\Throwable $e) {
-            $this->unauthorized('Invalid token: ' . $e->getMessage());
-            exit();
+            $response->error('Invalid token: ' . $e->getMessage(), 401);
+            return false;
         }
-    }
-
-    private function unauthorized(string $message): void
-    {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Unauthorized: ' . $message]);
-    }
-
-    private function getHeadersManual(): array
-    {
-        $headers = [];
-        foreach ($_SERVER as $key => $value) {
-            if (strpos($key, 'HTTP_') === 0) {
-                $header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
-                $headers[$header] = $value;
-            }
-        }
-        return $headers;
     }
 }

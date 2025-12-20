@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Request;
+use App\Core\Response;
 use PDO;
 use PDOException;
 use Exception;
@@ -11,7 +13,7 @@ use Throwable;
 
 final class DatabaseController
 {
-    public function init(): void
+    public function init(Request $request, Response $response): void
     {
         try {
             $host = $_SERVER['DB_HOST'] ?? $_ENV['DB_HOST'] ?? '127.0.0.1';
@@ -35,10 +37,7 @@ final class DatabaseController
             // 3. Check if tables already exist (idempotency check)
             $stmt = $pdo->query("SHOW TABLES LIKE 'users'");
             if ($stmt->fetch()) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'message' => 'Database already initialized'
-                ]);
+                $response->success(null, 'Database already initialized');
                 return;
             }
 
@@ -58,28 +57,12 @@ final class DatabaseController
                 }
             }
 
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Database initialized successfully'
-            ]);
+            $response->success(null, 'Database initialized successfully');
 
         } catch (PDOException $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => 'Database Error: ' . $e->getMessage()
-            ], 500);
+            $response->error('Database Error: ' . $e->getMessage(), 500);
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            $response->error('Error: ' . $e->getMessage(), 500);
         }
-    }
-
-    private function jsonResponse(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
     }
 }

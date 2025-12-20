@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Request;
+use App\Core\Response;
 use PDO;
 use Throwable;
 
@@ -13,7 +15,7 @@ final class HealthController
         private readonly ?PDO $db = null
     ) {}
 
-    public function check(): void
+    public function check(Request $request, Response $response): void
     {
         $status = [
             'status' => 'ok',
@@ -41,13 +43,6 @@ final class HealthController
             $status['status'] = 'degraded';
         }
 
-        $this->jsonResponse($status, $status['status'] === 'ok' ? 200 : 500);
-    }
-
-    private function jsonResponse(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
+        $response->withStatus($status['status'] === 'ok' ? 200 : 500)->json($status);
     }
 }

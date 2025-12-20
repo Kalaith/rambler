@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Actions\LoginAction;
 use App\Actions\RegisterAction;
+use App\Core\Request;
+use App\Core\Response;
 use Throwable;
 
 final class AuthController
@@ -15,58 +17,31 @@ final class AuthController
         private readonly LoginAction $loginAction
     ) {}
 
-    public function register(): void
+    public function register(Request $request, Response $response): void
     {
         try {
-            $data = $this->getParsedBody();
             $user = $this->registerAction->execute(
-                (string)($data['email'] ?? ''),
-                (string)($data['password'] ?? '')
+                (string)$request->get('email', ''),
+                (string)$request->get('password', '')
             );
 
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'User registered successfully',
-                'user' => $user
-            ], 201);
+            $response->withStatus(201)->success($user, 'User registered successfully');
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            $response->error($e->getMessage(), 400);
         }
     }
 
-    public function login(): void
+    public function login(Request $request, Response $response): void
     {
         try {
-            $data = $this->getParsedBody();
-            $token = $this->loginAction->execute(
-                (string)($data['email'] ?? ''),
-                (string)($data['password'] ?? '')
+            $result = $this->loginAction->execute(
+                (string)$request->get('email', ''),
+                (string)$request->get('password', '')
             );
 
-            $this->jsonResponse([
-                'success' => true,
-                'token' => $token
-            ]);
+            $response->success($result);
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 401);
+            $response->error($e->getMessage(), 401);
         }
-    }
-
-    private function getParsedBody(): array
-    {
-        return json_decode(file_get_contents('php://input'), true) ?? $_POST;
-    }
-
-    private function jsonResponse(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
     }
 }

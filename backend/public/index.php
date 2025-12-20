@@ -4,27 +4,33 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Manual autoloader for App classes - prepend to override stale composer mappings in preview
+spl_autoload_register(function ($class) {
+    if (strpos($class, 'App\\') === 0) {
+        $path = __DIR__ . '/../src/' . str_replace('\\', '/', substr($class, 4)) . '.php';
+        if (file_exists($path)) {
+            require_once $path;
+        }
+    }
+}, true, true);
+
 use App\Config\Router;
 use App\Controllers\AuthController;
 use App\Controllers\RambleController;
 use App\Controllers\DatabaseController;
 use App\Controllers\KofiWebhookController;
 use App\Controllers\HealthController;
+use App\Middleware\JwtMiddleware;
+use App\Core\Response;
 use Dotenv\Dotenv;
 
-// Custom autoloader for App classes
-spl_autoload_register(function ($class) {
-    if (strpos($class, 'App\\') === 0) {
-        $path = __DIR__ . '/../src/' . str_replace('\\', '/', substr($class, 4)) . '.php';
-        if (file_exists($path)) {
-            require $path;
-        }
-    }
-}, true, true);
-
 // Load Environment
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
-$dotenv->safeLoad();
+try {
+    $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
+    $dotenv->load();
+} catch (\Throwable $e) {
+    // Fail silently or handle as needed
+}
 
 // Get CORS origin
 $allowedOrigin = $_ENV['CORS_ORIGIN'] ?? '*';
@@ -56,11 +62,14 @@ $router->setBasePath($basePath);
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/register', [AuthController::class, 'register']);
 
-$router->post('/rambles', [RambleController::class, 'capture']);
-$router->get('/rambles', [RambleController::class, 'list']);
-$router->put('/rambles/{id}', [RambleController::class, 'update']);
-$router->delete('/rambles/{id}', [RambleController::class, 'delete']);
-$router->post('/rambles/{id}/process', [RambleController::class, 'process']);
+// Protected Routes
+$router->post('/rambles', [RambleController::class, 'capture'], [JwtMiddleware::class]);
+$router->get('/rambles', [RambleController::class, 'list'], [JwtMiddleware::class]);
+$router->put('/rambles/{id}', [RambleController::class, 'update'], [JwtMiddleware::class]);
+$router->delete('/rambles/{id}', [RambleController::class, 'delete'], [JwtMiddleware::class]);
+$router->post('/rambles/{id}/process', [RambleController::class, 'process'], [JwtMiddleware::class]);
+
+// Other Routes
 $router->post('/webhooks/kofi', [KofiWebhookController::class, 'handle']);
 $router->get('/db-init', [DatabaseController::class, 'init']);
 $router->get('/health', [HealthController::class, 'check']);
@@ -69,11 +78,5 @@ $router->get('/health', [HealthController::class, 'check']);
 try {
     $router->handle();
 } catch (\Throwable $e) {
-    http_response_code(500);
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => false,
-        'message' => 'Internal Server Error',
-        'error' => $e->getMessage()
-    ]);
+    (new Response())->error('Internal Server Error: ' . $e->getMessage(), 500);
 }

@@ -7,7 +7,8 @@ namespace App\Controllers;
 use App\Actions\CaptureRambleAction;
 use App\Actions\ProcessRambleAction;
 use App\External\RambleRepository;
-use App\Middleware\JwtMiddleware;
+use App\Core\Request;
+use App\Core\Response;
 use App\Services\RateLimiter;
 use Throwable;
 
@@ -20,62 +21,48 @@ final class RambleController
         private readonly RateLimiter $rateLimiter
     ) {}
 
-    public function capture(): void
+    public function capture(Request $request, Response $response): void
     {
         try {
-            $userId = $this->authenticate();
-            $data = $this->getParsedBody();
+            $userId = (int)$request->getAttribute('user_id', 0);
             
             $result = $this->captureRambleAction->execute(
                 $userId,
-                (string)($data['content'] ?? '')
+                (string)$request->get('content', '')
             );
 
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $result
-            ], 201);
+            $response->withStatus(201)->success($result);
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            $response->error($e->getMessage(), 400);
         }
     }
 
-    public function process(array $args): void
+    public function process(Request $request, Response $response): void
     {
         try {
-            $userId = $this->authenticate();
+            $userId = (int)$request->getAttribute('user_id', 0);
             
             if (!$this->rateLimiter->canProcess($userId)) {
                 $limitInfo = $this->rateLimiter->getLimitInfo($userId);
                 throw new \Exception("Daily processing limit reached ({$limitInfo['limit']}). Please try again tomorrow.");
             }
 
-            $rambleId = (int)($args['id'] ?? 0);
+            $rambleId = (int)$request->getParam('id', 0);
             
             $result = $this->processRambleAction->execute($userId, $rambleId);
 
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $result
-            ]);
+            $response->success($result);
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            $response->error($e->getMessage(), 400);
         }
     }
 
-    public function update(array $args): void
+    public function update(Request $request, Response $response): void
     {
         try {
-            $userId = $this->authenticate();
-            $rambleId = (int)($args['id'] ?? 0);
-            $data = $this->getParsedBody();
-            $content = (string)($data['content'] ?? '');
+            $userId = (int)$request->getAttribute('user_id', 0);
+            $rambleId = (int)$request->getParam('id', 0);
+            $content = (string)$request->get('content', '');
             $wordCount = str_word_count($content);
 
             $success = $this->rambleRepository->update($rambleId, $userId, $content, $wordCount);
@@ -84,22 +71,16 @@ final class RambleController
                 throw new \Exception("Failed to update ramble or ramble not found.");
             }
 
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Ramble updated successfully'
-            ]);
+            $response->success(null, 'Ramble updated successfully');
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            $response->error($e->getMessage(), 400);
         }
     }
 
-    public function list(): void
+    public function list(Request $request, Response $response): void
     {
         try {
-            $userId = $this->authenticate();
+            $userId = (int)$request->getAttribute('user_id', 0);
             $rambles = $this->rambleRepository->findByUserId($userId);
 
             // Decode JSON fields for each ramble if they exist
@@ -115,23 +96,17 @@ final class RambleController
                 }
             }
 
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $rambles
-            ]);
+            $response->success($rambles);
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+            $response->error($e->getMessage(), 500);
         }
     }
 
-    public function delete(array $args): void
+    public function delete(Request $request, Response $response): void
     {
         try {
-            $userId = $this->authenticate();
-            $rambleId = (int)($args['id'] ?? 0);
+            $userId = (int)$request->getAttribute('user_id', 0);
+            $rambleId = (int)$request->getParam('id', 0);
 
             $success = $this->rambleRepository->delete($rambleId, $userId);
 
@@ -139,33 +114,9 @@ final class RambleController
                 throw new \Exception("Failed to delete ramble or ramble not found.");
             }
 
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Ramble deleted successfully'
-            ]);
+            $response->success(null, 'Ramble deleted successfully');
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            $response->error($e->getMessage(), 400);
         }
-    }
-
-    private function authenticate(): int
-    {
-        $middleware = new JwtMiddleware();
-        return $middleware->authenticate();
-    }
-
-    private function getParsedBody(): array
-    {
-        return json_decode(file_get_contents('php://input'), true) ?? $_POST;
-    }
-
-    private function jsonResponse(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
     }
 }

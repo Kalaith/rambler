@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\External\UserRepository;
+use App\Core\Request;
+use App\Core\Response;
 use Throwable;
 
 final class KofiWebhookController
@@ -15,18 +17,19 @@ final class KofiWebhookController
         private readonly UserRepository $userRepository,
         private readonly \PDO $db
     ) {
-        $this->verificationToken = $_ENV['KOFI_VERIFICATION_TOKEN'] ?? $_ENV['KO_FI_TOKEN'] ?? '';
+        $this->verificationToken = $_ENV['KOFI_VERIFICATION_TOKEN'] ?? $_SERVER['KOFI_VERIFICATION_TOKEN'] ?? getenv('KOFI_VERIFICATION_TOKEN') 
+            ?? $_ENV['KO_FI_TOKEN'] ?? $_SERVER['KO_FI_TOKEN'] ?? getenv('KO_FI_TOKEN') ?: '';
     }
 
-    public function handle(): void
+    public function handle(Request $request, Response $response): void
     {
         try {
-            $data = $_POST['data'] ?? null;
+            $data = $request->get('data');
             if (!$data) {
                 throw new \Exception('No data received');
             }
 
-            $payment = json_decode($data, true);
+            $payment = is_string($data) ? json_decode($data, true) : $data;
             if (!$payment) {
                 throw new \Exception('Invalid JSON data');
             }
@@ -44,12 +47,9 @@ final class KofiWebhookController
                 $this->upgradeUser($email);
             }
 
-            $this->jsonResponse(['success' => true]);
+            $response->success();
         } catch (Throwable $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            $response->error($e->getMessage(), 400);
         }
     }
 
@@ -68,12 +68,5 @@ final class KofiWebhookController
             'expiry' => $expiry,
             'email' => $email
         ]);
-    }
-
-    private function jsonResponse(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
     }
 }
