@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { Ramble } from '../types';
 import api from '../api/client';
 

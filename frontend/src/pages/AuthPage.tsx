@@ -27,7 +27,7 @@ export const AuthPage: React.FC = () => {
             } else {
                 setError(isLogin ? 'Invalid credentials' : 'Registration failed');
             }
-        } catch (err) {
+        } catch {
             setError('Something went wrong. Please try again.');
         }
     };

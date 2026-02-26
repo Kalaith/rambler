@@ -53,7 +53,8 @@ const useAuthStore = create<AuthState>()(
                 set({ user: null, token: null });
 
                 // Force a page reload to ensure all memory-resident state is purged
-                const basePath = (import.meta as any).env.VITE_BASE_PATH || '/';
+                const env = import.meta.env as Record<string, string | undefined>;
+                const basePath = env.VITE_BASE_PATH || '/';
                 window.location.href = basePath;
             },
         }),

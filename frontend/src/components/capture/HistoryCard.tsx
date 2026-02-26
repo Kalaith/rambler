@@ -23,7 +23,15 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({ ramble, onReprocess })
 
         {ramble.summary ? (
             <div className="pt-6 border-t border-zinc-50 space-y-4">
-                <KernelDisplay result={ramble as any} small />
+                <KernelDisplay
+                    result={{
+                        summary: ramble.summary ?? '',
+                        topics: ramble.topics ?? [],
+                        questions: ramble.questions ?? [],
+                        ideas: ramble.ideas ?? [],
+                    }}
+                    small
+                />
             </div>
         ) : (
             <div className="pt-4 flex justify-start">

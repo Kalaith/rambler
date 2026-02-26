@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRambleStore } from '../stores/useRambleStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { rambleService } from '../api/rambles';
-import { ProcessedResult, UsageLimit } from '../types';
+import { ProcessedResult, Ramble, UsageLimit } from '../types';
 
 export const useCapture = () => {
     const { user } = useAuthStore();
@@ -21,7 +21,7 @@ export const useCapture = () => {
     const [usage, setUsage] = useState<UsageLimit | null>(null);
 
     const { addRamble, updateRamble, fetchRambles, rambles } = useRambleStore();
-    const timeoutRef = useRef<any | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchUsage = async () => {
         const res = await rambleService.getUsage();
@@ -105,7 +105,7 @@ export const useCapture = () => {
         }
     };
 
-    const handleSelectRamble = async (ramble: any) => {
+    const handleSelectRamble = async (ramble: Ramble) => {
         if (content.trim() && content !== rambles.find(r => r.id === currentRambleId)?.content) {
             await syncContent(content, currentRambleId);
         }

@@ -2,7 +2,7 @@ import api from './client';
 import { User } from '../types';
 
 export const authService = {
-    async login(email: string, password: string): Promise<{ success: boolean; data?: { user: User; token: string }; error?: any }> {
+    async login(email: string, password: string): Promise<{ success: boolean; data?: { user: User; token: string }; error?: unknown }> {
         try {
             const response = await api.post('login', { email, password });
             if (response.data.success !== false) {
@@ -15,7 +15,7 @@ export const authService = {
         }
     },
 
-    async register(email: string, password: string): Promise<{ success: boolean; message?: string; error?: any }> {
+    async register(email: string, password: string): Promise<{ success: boolean; message?: string; error?: unknown }> {
         try {
             const response = await api.post('register', { email, password });
             if (response.data.success !== false) {
