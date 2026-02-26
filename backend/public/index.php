@@ -5,9 +5,9 @@ declare(strict_types=1);
 // Search for shared vendor folder in multiple locations
 $autoloader = null;
 $searchPaths = [
-    __DIR__ . '/../vendor/autoload.php',           // Local vendor
+    __DIR__ . '/../../../vendor/autoload.php',     // Central vendor at repository root
+    __DIR__ . '/../vendor/autoload.php',           // Local vendor fallback
     __DIR__ . '/../../vendor/autoload.php',        // 2 levels up
-    __DIR__ . '/../../../vendor/autoload.php',     // 3 levels up (Preview typically)
     __DIR__ . '/../../../../vendor/autoload.php',  // 4 levels up
     __DIR__ . '/../../../../../vendor/autoload.php' // 5 levels up
 ];
