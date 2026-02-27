@@ -1,5 +1,5 @@
 import api from './client';
-import { ProcessedResult } from '../types';
+import { ProcessedResult, UsageLimit } from '../types';
 
 export const rambleService = {
     async process(id: number): Promise<{ success: boolean; data?: ProcessedResult; error?: unknown }> {
@@ -15,7 +15,7 @@ export const rambleService = {
         }
     },
 
-    async getUsage(): Promise<{ success: boolean; data?: Record<string, unknown>; error?: unknown }> {
+    async getUsage(): Promise<{ success: boolean; data?: UsageLimit; error?: unknown }> {
         try {
             const response = await api.get('usage');
             if (response.data.success !== false) {

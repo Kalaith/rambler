@@ -25,7 +25,7 @@ export const useCapture = () => {
 
     const fetchUsage = async () => {
         const res = await rambleService.getUsage();
-        if (res.success) setUsage(res.data);
+        if (res.success) setUsage(res.data ?? null);
     };
 
     // Reset state when user changes (absolute isolation)
