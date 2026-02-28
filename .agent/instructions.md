@@ -11,7 +11,7 @@ This document synthesizes the core standards for the Rambler project, consolidat
 
 ## 🛠️ Backend Standards (PHP)
 - **Tech Stack**: PHP 8.1+, Slim 4, PHP-DI, Eloquent ORM.
-- **Authentication**: **USE JWT TOKENS (Direct implementation)**. Do NOT use Auth0 for this project. Utilize `firebase/php-jwt`.
+- **Authentication**: **USE JWT TOKENS (Direct implementation)**. Utilize `firebase/php-jwt`.
 - **AI Integration**: Use **Google AI Studio (Gemini 2.5 Flash)**.
     - **Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
     - **Method**: POST
@@ -65,4 +65,3 @@ This document synthesizes the core standards for the Rambler project, consolidat
 - No business logic in Controllers or direct Component state (if reusable).
 - No direct database queries in Controllers.
 - No missing error handling.
-- No Auth0 (for this project).
