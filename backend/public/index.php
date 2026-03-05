@@ -72,7 +72,7 @@ header('Access-Control-Allow-Origin: ' . $allowedOrigin);
 $router = new Router();
 
 // Auto-detect base path (e.g., /rambler/api) based on the request
-$basePath = $_ENV['API_BASE_PATH'] ?? '';
+$basePath = $_ENV['API_BASE_PATH'];
 if (empty($basePath)) {
     if (preg_match('/^(.*\/api)/', $_SERVER['REQUEST_URI'] ?? '', $matches)) {
         $basePath = $matches[1];
