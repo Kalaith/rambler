@@ -30,3 +30,5 @@ frontend/.stylelintcache
 dist/
 build/
 out/
+
+**/.env*
