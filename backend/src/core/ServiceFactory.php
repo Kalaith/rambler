@@ -30,7 +30,9 @@ final class ServiceFactory
         return match ($class) {
             AuthController::class => new AuthController(
                 new RegisterAction(new UserRepository($this->getDb())),
-                new LoginAction(new UserRepository($this->getDb()))
+                new LoginAction(new UserRepository($this->getDb())),
+                new UserRepository($this->getDb()),
+                $this->getDb()
             ),
             RambleController::class => new RambleController(
                 new CaptureRambleAction(new RambleRepository($this->getDb())),

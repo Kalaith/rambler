@@ -9,6 +9,8 @@ interface CaptureHeaderProps {
     onProcess: () => void;
     onNew: () => void;
     onLogout: () => void;
+    isGuest?: boolean;
+    linkAccountUrl?: string;
     usage: UsageLimit | null;
 }
 
@@ -19,6 +21,8 @@ export const CaptureHeader: React.FC<CaptureHeaderProps> = ({
     onProcess,
     onNew,
     onLogout,
+    isGuest = false,
+    linkAccountUrl,
     usage
 }) => (
     <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-zinc-100 px-6 py-4 sm:px-12 sm:py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -58,6 +62,14 @@ export const CaptureHeader: React.FC<CaptureHeaderProps> = ({
                     </>
                 ) : 'Extract Kernels'}
             </button>
+            {isGuest && linkAccountUrl && (
+                <a
+                    href={linkAccountUrl}
+                    className="px-4 py-3 text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl hover:bg-amber-100 transition-all duration-300"
+                >
+                    Link Account
+                </a>
+            )}
             <div className="w-px h-8 bg-zinc-100 mx-2 hidden sm:block" />
             <button
                 onClick={onLogout}

@@ -9,11 +9,11 @@ echo "Document Root: " . ($_SERVER['DOCUMENT_ROOT'] ?? 'Not set') . "\n";
 echo "\nChecking Autoloader Locations:\n";
 
 $locations = [
+    'Central (repo root)' => __DIR__ . '/../../../../vendor/autoload.php',
     'Local' => __DIR__ . '/../vendor/autoload.php',
-    'Up 1 (backend root?)' => __DIR__ . '/../../vendor/autoload.php',
-    'Up 2 (project root?)' => __DIR__ . '/../../../vendor/autoload.php',
-    'Up 3 (server root?)' => __DIR__ . '/../../../../vendor/autoload.php',
-    'Up 4' => __DIR__ . '/../../../../../vendor/autoload.php',
+    'Up 2 (legacy)' => __DIR__ . '/../../../vendor/autoload.php',
+    'Up 1 (legacy)' => __DIR__ . '/../../vendor/autoload.php',
+    'Up 4 (legacy)' => __DIR__ . '/../../../../../vendor/autoload.php',
 ];
 
 foreach ($locations as $label => $path) {

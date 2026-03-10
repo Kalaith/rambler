@@ -5,11 +5,11 @@ declare(strict_types=1);
 // Search for shared vendor folder in multiple locations
 $autoloader = null;
 $searchPaths = [
-    __DIR__ . '/../../../vendor/autoload.php',     // Central vendor at repository root
+    __DIR__ . '/../../../../vendor/autoload.php',  // Central vendor at repository root
     __DIR__ . '/../vendor/autoload.php',           // Local vendor fallback
-    __DIR__ . '/../../vendor/autoload.php',        // 2 levels up
-    __DIR__ . '/../../../../vendor/autoload.php',  // 4 levels up
-    __DIR__ . '/../../../../../vendor/autoload.php' // 5 levels up
+    __DIR__ . '/../../../vendor/autoload.php',     // Legacy layout fallback
+    __DIR__ . '/../../vendor/autoload.php',        // Legacy layout fallback
+    __DIR__ . '/../../../../../vendor/autoload.php' // Legacy layout fallback
 ];
 
 foreach ($searchPaths as $path) {
@@ -83,6 +83,9 @@ $router->setBasePath($basePath);
 // Routes
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/register', [AuthController::class, 'register']);
+$router->post('/guest-session', [AuthController::class, 'createGuestSession']);
+$router->get('/auth/current-user', [AuthController::class, 'currentUser'], [JwtMiddleware::class]);
+$router->post('/auth/link-guest', [AuthController::class, 'linkGuest'], [JwtMiddleware::class]);
 
 // Protected Routes
 $router->post('/rambles', [RambleController::class, 'capture'], [JwtMiddleware::class]);

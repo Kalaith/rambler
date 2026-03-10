@@ -34,6 +34,15 @@ final class UserRepository
         return (int)$this->db->lastInsertId();
     }
 
+    public function updateEmail(int $id, string $email): void
+    {
+        $stmt = $this->db->prepare('UPDATE users SET email = :email WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+            'email' => $email,
+        ]);
+    }
+
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM users WHERE id = :id LIMIT 1');

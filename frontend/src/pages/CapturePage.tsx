@@ -23,7 +23,7 @@ export const CapturePage: React.FC = () => {
     } = useCapture();
 
     const { deleteRamble } = useRambleStore();
-    const { logout } = useAuthStore();
+    const { logout, user, getLinkAccountUrl } = useAuthStore();
 
     const handleDeleteRamble = async (id: number) => {
         const success = await deleteRamble(id);
@@ -41,6 +41,8 @@ export const CapturePage: React.FC = () => {
                 onProcess={handleProcess}
                 onNew={handleNewRamble}
                 onLogout={logout}
+                isGuest={Boolean(user?.is_guest)}
+                linkAccountUrl={user?.is_guest ? getLinkAccountUrl() : undefined}
                 usage={usage}
             />
 

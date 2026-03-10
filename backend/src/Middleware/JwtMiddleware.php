@@ -36,8 +36,11 @@ final class JwtMiddleware
 
         try {
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
-            // Store user_id in request attributes
+            $isGuest = (bool) ($decoded->is_guest ?? false) || (($decoded->auth_type ?? 'frontpage') === 'guest');
             $request->setAttribute('user_id', (int)$decoded->sub);
+            $request->setAttribute('is_guest', $isGuest);
+            $request->setAttribute('auth_type', $isGuest ? 'guest' : 'frontpage');
+            $request->setAttribute('user_role', $isGuest ? 'guest' : (string) ($decoded->role ?? 'user'));
             return true;
         } catch (\Throwable $e) {
             $response->error('Invalid token: ' . $e->getMessage(), 401);

@@ -8,8 +8,8 @@
     "scripts": {
         "start": "php -S localhost:8000 public/index.php",
         "db:init": "php bin/db-init.php",
-        "test": "phpunit",
-        "cs-check": "phpcs --standard=PSR12 src/ tests/",
-        "cs-fix": "phpcbf --standard=PSR12 src/ tests/"
+        "test": "../../../vendor/bin/phpunit -c phpunit.xml",
+        "cs-check": "../../../vendor/bin/phpcs --standard=PSR12 src/ tests/",
+        "cs-fix": "../../../vendor/bin/phpcbf --standard=PSR12 src/ tests/"
     }
 }

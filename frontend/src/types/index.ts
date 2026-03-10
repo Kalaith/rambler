@@ -1,6 +1,8 @@
 export class User {
     id: number = 0;
     email: string = '';
+    is_guest?: boolean = false;
+    auth_type?: 'frontpage' | 'guest' = 'frontpage';
     subscription_tier?: 'free' | 'pro' = 'free';
     subscription_expires_at?: string;
 }
