@@ -924,12 +924,16 @@ final class AuthService
     
     public function __construct()
     {
-        $this->jwtSecret = $_ENV['JWT_SECRET'] ?? '';
-        $this->jwtIssuer = $_ENV['JWT_ISSUER'] ?? 'localhost';
-        
-        if (empty($this->jwtSecret)) {
+        if (!isset($_ENV['JWT_SECRET']) || trim((string) $_ENV['JWT_SECRET']) === '') {
             throw new \Exception('JWT configuration missing. Set JWT_SECRET environment variable.');
         }
+
+        if (!isset($_ENV['JWT_ISSUER']) || trim((string) $_ENV['JWT_ISSUER']) === '') {
+            throw new \Exception('JWT configuration missing. Set JWT_ISSUER environment variable.');
+        }
+
+        $this->jwtSecret = trim((string) $_ENV['JWT_SECRET']);
+        $this->jwtIssuer = trim((string) $_ENV['JWT_ISSUER']);
     }
     
     public function hashPassword(string $password): string

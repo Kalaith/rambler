@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Env;
 use RuntimeException;
 
 final class GeminiService
 {
     private string $apiKey;
     private string $endpoint;
+    private bool $disableSslVerification;
 
     public function __construct()
     {
-        $this->apiKey = $_ENV['GEMINI_API_KEY'] ?? $_SERVER['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY') ?: '';
+        $this->apiKey = Env::required('GEMINI_API_KEY');
         $this->endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-
-        if (empty($this->apiKey)) {
-            throw new RuntimeException('GEMINI_API_KEY is not configured');
-        }
+        $this->disableSslVerification = Env::required('APP_ENV') === 'development';
     }
 
     public function generateStructuredExtraction(string $text): array
@@ -54,7 +53,7 @@ final class GeminiService
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 
         // Handle SSL certificate issues on local dev
-        if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
+        if ($this->disableSslVerification) {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
+use App\Core\Env;
 use App\External\UserRepository;
 use Firebase\JWT\JWT;
 use InvalidArgumentException;
-use RuntimeException;
 
 final class LoginAction
 {
@@ -23,16 +23,7 @@ final class LoginAction
             throw new InvalidArgumentException('Invalid credentials');
         }
 
-        $secret = $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: '';
-        
-        // Debug logging
-        $maskedSecret = substr($secret, 0, 3) . '...' . substr($secret, -3);
-        $source = isset($_ENV['JWT_SECRET']) ? '$_ENV' : (isset($_SERVER['JWT_SECRET']) ? '$_SERVER' : (getenv('JWT_SECRET') ? 'getenv' : 'none'));
-        error_log("JWT Sign - Source: $source, Secret: $maskedSecret");
-
-        if (empty($secret)) {
-            throw new RuntimeException('JWT security not configured');
-        }
+        $secret = Env::required('JWT_SECRET');
 
         $payload = [
             'sub' => $user['id'],

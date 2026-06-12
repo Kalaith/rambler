@@ -6,11 +6,13 @@ namespace App\Controllers;
 
 use App\Actions\LoginAction;
 use App\Actions\RegisterAction;
+use App\Core\Env;
 use App\Core\Request;
 use App\Core\Response;
 use App\External\UserRepository;
 use Firebase\JWT\JWT;
 use PDO;
+use RuntimeException;
 use Throwable;
 
 final class AuthController
@@ -45,6 +47,8 @@ final class AuthController
             );
 
             $response->success($result);
+        } catch (RuntimeException $e) {
+            $response->error($e->getMessage(), 500);
         } catch (Throwable $e) {
             $response->error($e->getMessage(), 401);
         }
@@ -82,10 +86,7 @@ final class AuthController
                 'password_hash' => $passwordHash,
             ]);
 
-            $secret = $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: '';
-            if (empty($secret)) {
-                throw new \RuntimeException('JWT security not configured');
-            }
+            $secret = Env::required('JWT_SECRET');
 
             $payload = [
                 'sub' => $guestUserId,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Core\Env;
 use App\Core\Request;
 use App\Core\Response;
 use Firebase\JWT\JWT;
@@ -22,14 +23,9 @@ final class JwtMiddleware
         }
 
         $token = $matches[1];
-        $secret = $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: '';
-
-        // Debug logging
-        $maskedSecret = substr($secret, 0, 3) . '...' . substr($secret, -3);
-        $source = isset($_ENV['JWT_SECRET']) ? '$_ENV' : (isset($_SERVER['JWT_SECRET']) ? '$_SERVER' : (getenv('JWT_SECRET') ? 'getenv' : 'none'));
-        error_log("JWT Verify - Source: $source, Secret: $maskedSecret, Token Prefix: " . substr($token, 0, 10));
-
-        if (empty($secret)) {
+        try {
+            $secret = Env::required('JWT_SECRET');
+        } catch (RuntimeException) {
             $response->error('Internal server error: JWT security not configured', 500);
             return false;
         }

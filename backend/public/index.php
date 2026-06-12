@@ -43,6 +43,7 @@ use App\Controllers\DatabaseController;
 use App\Controllers\KofiWebhookController;
 use App\Controllers\HealthController;
 use App\Middleware\JwtMiddleware;
+use App\Core\Env;
 use App\Core\Response;
 use Dotenv\Dotenv;
 
@@ -54,8 +55,14 @@ try {
     // Fail silently or handle as needed
 }
 
-// Get CORS origin
-$allowedOrigin = $_ENV['CORS_ORIGIN'] ?? '*';
+try {
+    $allowedOrigin = Env::required('CORS_ORIGIN');
+} catch (\Throwable $e) {
+    header('HTTP/1.1 500 Internal Server Error');
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    exit(1);
+}
 
 // Handle CORS preflight OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

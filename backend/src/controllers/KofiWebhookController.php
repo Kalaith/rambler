@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Env;
 use App\External\UserRepository;
 use App\Core\Request;
 use App\Core\Response;
+use RuntimeException;
 use Throwable;
 
 final class KofiWebhookController
@@ -17,8 +19,11 @@ final class KofiWebhookController
         private readonly UserRepository $userRepository,
         private readonly \PDO $db
     ) {
-        $this->verificationToken = $_ENV['KOFI_VERIFICATION_TOKEN'] ?? $_SERVER['KOFI_VERIFICATION_TOKEN'] ?? getenv('KOFI_VERIFICATION_TOKEN') 
-            ?? $_ENV['KO_FI_TOKEN'] ?? $_SERVER['KO_FI_TOKEN'] ?? getenv('KO_FI_TOKEN') ?: '';
+        try {
+            $this->verificationToken = Env::required('KOFI_VERIFICATION_TOKEN');
+        } catch (RuntimeException) {
+            $this->verificationToken = Env::required('KO_FI_TOKEN');
+        }
     }
 
     public function handle(Request $request, Response $response): void
