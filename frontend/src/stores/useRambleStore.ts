@@ -19,7 +19,7 @@ export const useRambleStore = create<RambleState>()(
         fetchRambles: async () => {
             set({ loading: true });
             try {
-                const response = await api.get('rambles');
+                const response = await api.get<Ramble[]>('rambles');
                 set({ rambles: response.data.data });
             } catch (error) {
                 console.error('Failed to fetch rambles', error);
@@ -29,7 +29,7 @@ export const useRambleStore = create<RambleState>()(
         },
         addRamble: async (content: string) => {
             try {
-                const response = await api.post('rambles', { content });
+                const response = await api.post<Ramble>('rambles', { content });
                 const newRamble = response.data.data;
                 set((state) => ({ rambles: [newRamble, ...state.rambles] }));
                 return newRamble;
@@ -40,7 +40,7 @@ export const useRambleStore = create<RambleState>()(
         },
         updateRamble: async (id: number, content: string) => {
             try {
-                const response = await api.put(`rambles/${id}`, { content });
+                const response = await api.put<unknown>(`rambles/${id}`, { content });
                 if (response.data.success === false) return false;
 
                 set((state) => ({
@@ -56,7 +56,7 @@ export const useRambleStore = create<RambleState>()(
         },
         deleteRamble: async (id: number) => {
             try {
-                const response = await api.delete(`rambles/${id}`);
+                const response = await api.delete<unknown>(`rambles/${id}`);
                 if (response.data.success === false) return false;
 
                 set((state) => ({

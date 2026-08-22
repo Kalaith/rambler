@@ -48,6 +48,12 @@ final class Response
 
     public function error(string $message, int $code = 400, array $details = []): void
     {
+        if ($code >= 500) {
+            error_log($message);
+            $message = 'An unexpected server error occurred.';
+            $details = [];
+        }
+
         $this->withStatus($code)->json(array_merge([
             'success' => false,
             'message' => $message

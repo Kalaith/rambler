@@ -39,7 +39,6 @@ spl_autoload_register(function ($class) {
 use App\Core\Router;
 use App\Controllers\AuthController;
 use App\Controllers\RambleController;
-use App\Controllers\DatabaseController;
 use App\Controllers\KofiWebhookController;
 use App\Controllers\HealthController;
 use App\Middleware\JwtMiddleware;
@@ -60,7 +59,8 @@ try {
 } catch (\Throwable $e) {
     header('HTTP/1.1 500 Internal Server Error');
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    error_log('Rambler configuration error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'An unexpected server error occurred.']);
     exit(1);
 }
 
@@ -103,13 +103,12 @@ $router->get('/usage', [RambleController::class, 'getUsage'], [JwtMiddleware::cl
 
 // Other Routes
 $router->post('/webhooks/kofi', [KofiWebhookController::class, 'handle']);
-$router->get('/db-init', [DatabaseController::class, 'init']);
-$router->get('/db/init', [DatabaseController::class, 'init']);
 $router->get('/health', [HealthController::class, 'check']);
 
 // Handle request
 try {
     $router->handle();
 } catch (\Throwable $e) {
-    (new Response())->error('Internal Server Error: ' . $e->getMessage(), 500);
+    error_log('Rambler unhandled exception: ' . $e->getMessage());
+    (new Response())->error('An unexpected server error occurred.', 500);
 }

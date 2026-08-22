@@ -1,6 +1,6 @@
-# 🧠 The Rambler
+# 🧠 The Rambler (legacy capture reference)
 
-> The merged Rambler offering now lives in `H:\WebHatchery\apps\thread`. That app combines this project's raw thought capture with Thread's searchable diary and reviewable memory layer. This folder is retained as the legacy capture implementation while data migration is planned.
+> Thread is the canonical product and API for the merged diary offering. It combines this project's raw thought capture with Thread's searchable diary and reviewable memory layer. This folder is retained as migration-only legacy reference code; it receives no new features and is scheduled for removal after the migration and deployment review on **2026-12-31**.
 
 **The Rambler is where you put all your non-sensical text, written with no spell check and no deep thoughts.**
 
@@ -32,30 +32,7 @@ We avoid "optimization" and "coaching" language.
 
 ## 🏗️ Getting Started
 
-### 📡 Backend
-1. **Configure**: Copy `backend/.env.example` to `backend/.env` and update credentials.
-2. **Initialize DB**: 
-   ```powershell
-   cd backend
-   composer db:init
-   ```
-3. **Start Server**: 
-   ```powershell
-   composer start
-   ```
-   (API will run on `http://localhost:8000`)
-
-### 🎨 Frontend
-1. **Install Deps**: 
-   ```powershell
-   cd frontend
-   npm install
-   ```
-2. **Start Dev**: 
-   ```powershell
-   npm run dev
-   ```
-   (App will run on `http://localhost:5173`)
+This migration-only folder is not published or run as a standalone app. Use the canonical Thread app for development and deployment. Shared dependencies are installed from the monorepo root with `npm ci` and `composer install`; database changes are applied through Thread's backend migration workflow.
 
 > [!TIP]
 > **Windows Users**: If using PowerShell 5.1, run commands individually. For a smoother experience, use the integrated terminal in VS Code.

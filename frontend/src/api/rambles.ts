@@ -4,7 +4,7 @@ import { ProcessedResult, UsageLimit } from '../types';
 export const rambleService = {
     async process(id: number): Promise<{ success: boolean; data?: ProcessedResult; error?: unknown }> {
         try {
-            const response = await api.post(`rambles/${id}/process`);
+            const response = await api.post<ProcessedResult>(`rambles/${id}/process`);
             if (response.data.success !== false) {
                 return { success: true, data: response.data.data };
             }
@@ -17,7 +17,7 @@ export const rambleService = {
 
     async getUsage(): Promise<{ success: boolean; data?: UsageLimit; error?: unknown }> {
         try {
-            const response = await api.get('usage');
+            const response = await api.get<UsageLimit>('usage');
             if (response.data.success !== false) {
                 return { success: true, data: response.data.data };
             }

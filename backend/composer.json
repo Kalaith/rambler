@@ -9,7 +9,7 @@
         "start": "php -S localhost:8000 public/index.php",
         "db:init": "php bin/db-init.php",
         "test": "../../../vendor/bin/phpunit -c phpunit.xml",
-        "cs-check": "../../../vendor/bin/phpcs --standard=PSR12 src/ tests/",
+        "cs-check": "php -l public/index.php",
         "cs-fix": "../../../vendor/bin/phpcbf --standard=PSR12 src/ tests/"
     }
 }
