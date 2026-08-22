@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Actions\CaptureRambleAction;
-use App\Actions\LoginAction;
 use App\Actions\ProcessRambleAction;
-use App\Actions\RegisterAction;
 use App\Controllers\AuthController;
 use App\Controllers\RambleController;
 use App\External\RambleRepository;
@@ -29,8 +27,6 @@ final class ServiceFactory
     {
         return match ($class) {
             AuthController::class => new AuthController(
-                new RegisterAction(new UserRepository($this->getDb())),
-                new LoginAction(new UserRepository($this->getDb())),
                 new UserRepository($this->getDb()),
                 $this->getDb()
             ),

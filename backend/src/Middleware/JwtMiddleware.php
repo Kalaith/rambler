@@ -18,7 +18,7 @@ final class JwtMiddleware
         $authorization = $request->getHeader('Authorization') ?? '';
 
         if (!$authorization || !preg_match('/Bearer\s+(.*)$/i', $authorization, $matches)) {
-            $response->error('Missing or invalid token', 401);
+            $response->error('Missing or invalid token', 401, ['login_url' => Env::required('WEBHATCHERY_LOGIN_URL')]);
             return false;
         }
 
@@ -39,7 +39,7 @@ final class JwtMiddleware
             $request->setAttribute('user_role', $isGuest ? 'guest' : (string) ($decoded->role ?? 'user'));
             return true;
         } catch (\Throwable $e) {
-            $response->error('Invalid token: ' . $e->getMessage(), 401);
+            $response->error('Invalid token', 401, ['login_url' => Env::required('WEBHATCHERY_LOGIN_URL')]);
             return false;
         }
     }

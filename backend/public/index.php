@@ -88,11 +88,10 @@ if (empty($basePath)) {
 $router->setBasePath($basePath);
 
 // Routes
-$router->post('/login', [AuthController::class, 'login']);
-$router->post('/register', [AuthController::class, 'register']);
 $router->post('/guest-session', [AuthController::class, 'createGuestSession']);
 $router->get('/auth/current-user', [AuthController::class, 'currentUser'], [JwtMiddleware::class]);
 $router->post('/auth/link-guest', [AuthController::class, 'linkGuest'], [JwtMiddleware::class]);
+$router->post('/auth/link-guest/preview', [AuthController::class, 'previewGuestLink'], [JwtMiddleware::class]);
 
 // Protected Routes
 $router->post('/rambles', [RambleController::class, 'capture'], [JwtMiddleware::class]);

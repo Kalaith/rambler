@@ -4,61 +4,26 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Actions\LoginAction;
-use App\Actions\RegisterAction;
 use App\Core\Env;
 use App\Core\Request;
 use App\Core\Response;
 use App\External\UserRepository;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use PDO;
-use RuntimeException;
 use Throwable;
 
 final class AuthController
 {
     public function __construct(
-        private readonly RegisterAction $registerAction,
-        private readonly LoginAction $loginAction,
         private readonly UserRepository $userRepository,
-        private readonly PDO $db
+        private readonly PDO $db,
     ) {}
-
-    public function register(Request $request, Response $response): void
-    {
-        try {
-            $user = $this->registerAction->execute(
-                (string)$request->get('email', ''),
-                (string)$request->get('password', '')
-            );
-
-            $response->withStatus(201)->success($user, 'User registered successfully');
-        } catch (Throwable $e) {
-            $response->error($e->getMessage(), 400);
-        }
-    }
-
-    public function login(Request $request, Response $response): void
-    {
-        try {
-            $result = $this->loginAction->execute(
-                (string)$request->get('email', ''),
-                (string)$request->get('password', '')
-            );
-
-            $response->success($result);
-        } catch (RuntimeException $e) {
-            $response->error($e->getMessage(), 500);
-        } catch (Throwable $e) {
-            $response->error($e->getMessage(), 401);
-        }
-    }
 
     public function currentUser(Request $request, Response $response): void
     {
         $userId = (int) $request->getAttribute('user_id', 0);
         $user = $this->userRepository->findById($userId);
-
         if (!$user) {
             $response->error('User not found', 404);
             return;
@@ -66,7 +31,7 @@ final class AuthController
 
         $response->success([
             'id' => (int) $user['id'],
-            'email' => $user['email'],
+            'email' => (string) $user['email'],
             'subscription_tier' => $user['subscription_tier'] ?? 'free',
             'subscription_expires_at' => $user['subscription_expires_at'] ?? null,
             'is_guest' => (bool) $request->getAttribute('is_guest', false),
@@ -80,19 +45,16 @@ final class AuthController
         try {
             $guestTag = bin2hex(random_bytes(8));
             $email = "guest_{$guestTag}@guest.webhatchery.local";
-            $passwordHash = password_hash(bin2hex(random_bytes(24)), PASSWORD_BCRYPT);
             $guestUserId = $this->userRepository->create([
                 'email' => $email,
-                'password_hash' => $passwordHash,
+                'password_hash' => password_hash(bin2hex(random_bytes(24)), PASSWORD_BCRYPT),
             ]);
-
-            $secret = Env::required('JWT_SECRET');
-
             $payload = [
                 'sub' => $guestUserId,
                 'user_id' => $guestUserId,
                 'email' => $email,
                 'role' => 'guest',
+                'roles' => ['guest'],
                 'auth_type' => 'guest',
                 'is_guest' => true,
                 'iat' => time(),
@@ -100,18 +62,11 @@ final class AuthController
             ];
 
             $response->withStatus(201)->success([
-                'token' => JWT::encode($payload, $secret, 'HS256'),
-                'user' => [
-                    'id' => $guestUserId,
-                    'email' => $email,
-                    'subscription_tier' => 'free',
-                    'subscription_expires_at' => null,
-                    'is_guest' => true,
-                    'auth_type' => 'guest',
-                ],
+                'token' => JWT::encode($payload, Env::required('JWT_SECRET'), 'HS256'),
+                'user' => ['id' => $guestUserId, 'email' => $email, 'is_guest' => true, 'auth_type' => 'guest', 'role' => 'guest'],
             ]);
-        } catch (Throwable $e) {
-            $response->error($e->getMessage(), 500);
+        } catch (Throwable $exception) {
+            $response->error($exception->getMessage(), 500);
         }
     }
 
@@ -119,50 +74,73 @@ final class AuthController
     {
         try {
             $userId = (int) $request->getAttribute('user_id', 0);
-            $isGuest = (bool) $request->getAttribute('is_guest', false);
             $role = (string) $request->getAttribute('user_role', 'user');
-
-            if ($userId <= 0) {
-                $response->error('Authentication required', 401);
-                return;
-            }
-
-            if ($isGuest) {
-                $response->error('Guest destination is not allowed', 400);
-                return;
-            }
-
-            if ($role === 'admin') {
-                $response->error('Guest and admin accounts cannot be linked', 403);
+            if ($userId <= 0 || $role === 'admin' || (bool) $request->getAttribute('is_guest', false)) {
+                $response->error('Guest destination is not allowed', 403);
                 return;
             }
 
             $guestUserId = (int) $request->get('guest_user_id', 0);
-            if ($guestUserId <= 0 || $guestUserId === $userId) {
-                $response->error('Invalid guest_user_id', 400);
+            $guestToken = (string) $request->get('guest_token', '');
+            $strategy = (string) ($request->get('merge_strategy', $request->get('strategy', 'merge')));
+            if ($guestUserId <= 0 || $guestUserId === $userId || !$this->guestTokenMatches($guestToken, $guestUserId)) {
+                $response->error('Guest token proof is invalid', 400);
+                return;
+            }
+            if (!in_array($strategy, ['keep_account', 'guest_wins', 'merge'], true)) {
+                $response->error('Invalid guest merge strategy', 400);
                 return;
             }
 
-            $guestUser = $this->userRepository->findById($guestUserId);
-            if (!$guestUser || !str_starts_with((string) $guestUser['email'], 'guest_')) {
-                $response->error('Invalid guest_user_id', 400);
-                return;
-            }
-
-            $stmt = $this->db->prepare('UPDATE rambles SET user_id = :user_id WHERE user_id = :guest_user_id');
-            $stmt->execute([
-                'user_id' => $userId,
-                'guest_user_id' => $guestUserId,
-            ]);
-
+            $query = $this->db->prepare($strategy === 'keep_account'
+                ? 'DELETE FROM rambles WHERE user_id = :guest_user_id'
+                : 'UPDATE rambles SET user_id = :user_id WHERE user_id = :guest_user_id');
+            $query->execute(['user_id' => $userId, 'guest_user_id' => $guestUserId]);
+            $count = $query->rowCount();
             $response->success([
                 'guest_user_id' => $guestUserId,
                 'linked_to_user_id' => $userId,
-                'moved_rows_by_table' => ['rambles' => $stmt->rowCount()],
-                'total_moved_rows' => $stmt->rowCount(),
+                'strategy' => $strategy,
+                'moved_rows_by_table' => ['rambles' => $count],
+                'total_moved_rows' => $count,
             ]);
-        } catch (Throwable $e) {
-            $response->error($e->getMessage(), 500);
+        } catch (Throwable $exception) {
+            $response->error($exception->getMessage(), 500);
+        }
+    }
+
+    public function previewGuestLink(Request $request, Response $response): void
+    {
+        $userId = (int) $request->getAttribute('user_id', 0);
+        $guestUserId = (int) $request->get('guest_user_id', 0);
+        $guestToken = (string) $request->get('guest_token', '');
+        if ($userId <= 0 || $guestUserId <= 0 || !$this->guestTokenMatches($guestToken, $guestUserId)) {
+            $response->error('Guest token proof is invalid', 400);
+            return;
+        }
+
+        $count = function (int $ownerId): int {
+            $query = $this->db->prepare('SELECT COUNT(*) FROM rambles WHERE user_id = ?');
+            $query->execute([$ownerId]);
+            return (int) $query->fetchColumn();
+        };
+        $response->success([
+            'has_guest_data' => $count($guestUserId) > 0,
+            'has_account_data' => $count($userId) > 0,
+            'guest_summary' => ['rambles' => $count($guestUserId)],
+            'account_summary' => ['rambles' => $count($userId)],
+            'allowed_strategies' => ['keep_account', 'guest_wins', 'merge'],
+        ]);
+    }
+
+    private function guestTokenMatches(string $token, int $guestUserId): bool
+    {
+        try {
+            $claims = (array) JWT::decode($token, new Key(Env::required('JWT_SECRET'), 'HS256'));
+            return ((bool) ($claims['is_guest'] ?? false) || (($claims['auth_type'] ?? null) === 'guest'))
+                && (string) ($claims['user_id'] ?? $claims['sub'] ?? '') === (string) $guestUserId;
+        } catch (Throwable) {
+            return false;
         }
     }
 }

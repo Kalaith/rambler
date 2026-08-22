@@ -1,78 +1,21 @@
 import React, { useState } from 'react';
-import { useAuthStore } from '../stores/useAuthStore';
-import { useNavigate } from 'react-router-dom';
 import { AuthCard } from '../components/auth/AuthCard';
 import { AuthHeader } from '../components/auth/AuthHeader';
-import { AuthForm } from '../components/auth/AuthForm';
-import { AuthToggle } from '../components/auth/AuthToggle';
+import { useAuthStore } from '../stores/useAuthStore';
 
 export const AuthPage: React.FC = () => {
-    const [isLogin, setIsLogin] = useState(true);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const { loginWithRedirect, continueAsGuest, getLinkAccountUrl } = useAuthStore();
     const [error, setError] = useState<string | null>(null);
-    const { login, register, continueAsGuest, getLinkAccountUrl } = useAuthStore();
-    const navigate = useNavigate();
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        try {
-            const success = isLogin
-                ? await login(email, password)
-                : await register(email, password);
-
-            if (success) {
-                navigate('/');
-            } else {
-                setError(isLogin ? 'Invalid credentials' : 'Registration failed');
-            }
-        } catch {
-            setError('Something went wrong. Please try again.');
-        }
-    };
-
     return (
         <AuthCard>
-            <AuthHeader isLogin={isLogin} />
-
-            <AuthForm
-                isLogin={isLogin}
-                email={email}
-                setEmail={setEmail}
-                password={password}
-                setPassword={setPassword}
-                error={error}
-                onSubmit={handleSubmit}
-            />
-
-            <div className="mb-6 space-y-3">
-                <button
-                    type="button"
-                    onClick={async () => {
-                        const success = await continueAsGuest();
-                        if (success) {
-                            navigate('/');
-                        } else {
-                            setError('Guest session failed');
-                        }
-                    }}
-                    className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
-                >
-                    Continue as Guest
-                </button>
-                <a
-                    href={getLinkAccountUrl()}
-                    className="block text-center text-sm text-indigo-600 underline hover:text-indigo-700"
-                >
-                    Sign up and link guest rambles
-                </a>
+            <AuthHeader isLogin />
+            <p className="mb-6 text-center text-sm text-slate-600">Sign in through WebHatchery, or start with a guest session.</p>
+            {error && <p className="mb-4 text-center text-sm text-red-600">{error}</p>}
+            <div className="space-y-3">
+                <button type="button" onClick={loginWithRedirect} className="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white">Sign in with WebHatchery</button>
+                <button type="button" onClick={() => void continueAsGuest().catch(() => setError('Guest session failed'))} className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white">Continue as Guest</button>
+                <a href={getLinkAccountUrl()} className="block text-center text-sm text-indigo-600 underline">Create an account and link guest rambles</a>
             </div>
-
-            <AuthToggle
-                isLogin={isLogin}
-                onToggle={() => setIsLogin(!isLogin)}
-            />
         </AuthCard>
     );
 };

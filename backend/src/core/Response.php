@@ -46,11 +46,11 @@ final class Response
         $this->json($response);
     }
 
-    public function error(string $message, int $code = 400): void
+    public function error(string $message, int $code = 400, array $details = []): void
     {
-        $this->withStatus($code)->json([
+        $this->withStatus($code)->json(array_merge([
             'success' => false,
             'message' => $message
-        ]);
+        ], $details));
     }
 }
