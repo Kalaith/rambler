@@ -1,5 +1,7 @@
 # 🧠 The Rambler
 
+> The merged Rambler offering now lives in `H:\WebHatchery\apps\thread`. That app combines this project's raw thought capture with Thread's searchable diary and reviewable memory layer. This folder is retained as the legacy capture implementation while data migration is planned.
+
 **The Rambler is where you put all your non-sensical text, written with no spell check and no deep thoughts.**
 
 Dump your raw thoughts. AI extracts the useful kernels of knowledge in a nice, easy-to-read summary.
