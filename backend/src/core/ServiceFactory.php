@@ -65,11 +65,11 @@ final class ServiceFactory
             return self::$db;
         }
 
-        $host = $_SERVER['DB_HOST'] ?? $_ENV['DB_HOST'] ?? '127.0.0.1';
-        $db   = $_SERVER['DB_NAME'] ?? $_ENV['DB_NAME'] ?? 'rambler';
-        $user = $_SERVER['DB_USERNAME'] ?? $_ENV['DB_USERNAME'] ?? 'root';
-        $pass = $_SERVER['DB_PASSWORD'] ?? $_ENV['DB_PASSWORD'] ?? '';
-        $port = $_SERVER['DB_PORT'] ?? $_ENV['DB_PORT'] ?? '3306';
+        $host = Env::required('DB_HOST');
+        $db   = Env::required('DB_NAME');
+        $user = Env::required('DB_USER');
+        $pass = Env::configured('DB_PASSWORD');
+        $port = Env::required('DB_PORT');
         $charset = 'utf8mb4';
 
         $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";

@@ -19,4 +19,14 @@ final class Env
 
         return $value;
     }
+
+    public static function configured(string $name): string
+    {
+        $value = $_ENV[$name] ?? $_SERVER[$name] ?? getenv($name);
+        if (!is_string($value)) {
+            throw new RuntimeException("{$name} environment variable is required.");
+        }
+
+        return trim($value);
+    }
 }
